@@ -3,7 +3,8 @@ import curses
 import requests
 from bs4 import BeautifulSoup
 import textwrap
-
+import xml.etree.ElementTree as ET
+    
 # List of XML feed URLs
 feed_urls = [
     "https://feeds.arstechnica.com/arstechnica/technology-lab",
@@ -34,31 +35,36 @@ for url in feed_urls:
     except requests.RequestException:
         continue
 
-    soup = BeautifulSoup(response.content, 'xml')
-    feed_items = soup.find_all('entry') + soup.find_all('item')
-
+    try:
+        root = ET.fromstring(response.content)
+    except ET.ParseError:
+        continue
+    
+    feed_items = root.findall(".//item") + root.findall(".//entry")
+    
     for item in feed_items:
-        # Title
-        title = item.title.text if item.title else "No title"
-
-        # Publication date
-        if item.name == 'entry':
-            pub_date = (
-                item.published.text if item.published else
-                item.updated.text if item.updated else "No date"
-            )
-        else:  # RSS
-            pub_date = item.pubDate.text if item.pubDate else "No date"
-
-        # Link
-        if item.name == 'entry':
-            link = item.link['href'] if item.link and item.link.has_attr('href') else None
-        else:
-            link = item.link.text.strip() if item.link else None
-
+        title_el = item.find("title")
+        title = title_el.text.strip() if title_el is not None and title_el.text else "No title"
+    
+        pub_date_el = (
+            item.find("published") or
+            item.find("updated") or
+            item.find("pubDate")
+        )
+        pub_date = pub_date_el.text.strip() if pub_date_el is not None and pub_date_el.text else "No date"
+    
+        link_el = item.find("link")
+        link = None
+        if link_el is not None:
+            # RSS <link> is text; Atom <link> has href attr
+            if link_el.text and link_el.text.strip():
+                link = link_el.text.strip()
+            elif "href" in link_el.attrib:
+                link = link_el.attrib["href"]
+    
         if link:
-            entries.append({'title': title, 'date': pub_date, 'link': link})
-
+            entries.append({"title": title, "date": pub_date, "link": link})
+            
 if not entries:
     print("No news found in feeds.")
     exit()
