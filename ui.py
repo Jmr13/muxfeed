@@ -29,16 +29,11 @@ def ui_loop(stdscr, entries):
             wrapped = []
             for line in page_lines:
                 wrapped.extend(textwrap.wrap(line, w - 1) or [""])
-
+        
             visible = wrapped[page_scroll:page_scroll + (h - 1)]
             for i, line in enumerate(visible):
-                if page_scroll + i == article_row:
-                    stdscr.attron(curses.color_pair(2))
-                    stdscr.addstr(i, 0, line)
-                    stdscr.attroff(curses.color_pair(2))
-                else:
-                    stdscr.addstr(i, 0, line)
-
+                stdscr.addstr(i, 0, line)  # no highlighting
+        
             stdscr.addstr(h - 1, 0, "↑/↓ scroll, 'b' back")
 
         else:
@@ -78,7 +73,7 @@ def ui_loop(stdscr, entries):
                 for text_line in raw_lines:
                     if y >= (h - 1):
                         break
-                    content = f"| {text_line} |"
+                    content = f"{text_line}"
                     content = content.center(box_width)
                     x = (w - box_width) // 2
                     if actual_idx == current_row:

@@ -4,41 +4,47 @@ from typing import Optional
 from config import NS
 
 def parse_date(date_str: Optional[str]) -> Optional[datetime]:
-    """Parse date strings from RSS/Atom feeds and return UTC datetime."""
+    """Parse date strings from RSS/Atom feeds and return a UTC datetime object."""
     if not date_str:
         return None
+
+    dt = None
 
     # 1️⃣ ISO 8601 (Atom)
     try:
         if date_str.endswith("Z"):
             dt = datetime.fromisoformat(date_str.replace("Z", "+00:00"))
-            return dt.astimezone(timezone.utc)
-        dt = datetime.fromisoformat(date_str)
-        # If naive, assume UTC
-        if dt.tzinfo is None:
-            dt = dt.replace(tzinfo=timezone.utc)
         else:
-            dt = dt.astimezone(timezone.utc)
-        return dt
+            dt = datetime.fromisoformat(date_str)
     except ValueError:
         pass
 
-    # 2️⃣ RFC 2822 / RSS2
-    try:
-        dt = datetime.strptime(date_str, "%a, %d %b %Y %H:%M:%S %Z")
-        # naive, assume UTC
-        dt = dt.replace(tzinfo=timezone.utc)
-        return dt
-    except ValueError:
-        pass
+    # 2️⃣ RFC 2822 / RSS2 with timezone name (e.g., "GMT")
+    if dt is None:
+        try:
+            dt = datetime.strptime(date_str, "%a, %d %b %Y %H:%M:%S %Z")
+            dt = dt.replace(tzinfo=timezone.utc)
+        except ValueError:
+            pass
 
-    # 3️⃣ Fallback without timezone
-    try:
-        dt = datetime.strptime(date_str, "%a, %d %b %Y %H:%M:%S")
-        return dt.replace(tzinfo=timezone.utc)
-    except ValueError:
-        return None
+    # 3️⃣ RFC 2822 / RSS2 with numeric offset (e.g., "+0000")
+    if dt is None:
+        try:
+            dt = datetime.strptime(date_str, "%a, %d %b %Y %H:%M:%S %z")
+        except ValueError:
+            pass
 
+    # 4️⃣ Fallback without timezone
+    if dt is None:
+        try:
+            dt = datetime.strptime(date_str, "%a, %d %b %Y %H:%M:%S")
+            dt = dt.replace(tzinfo=timezone.utc)
+        except ValueError:
+            return None
+
+    # Normalize to UTC and return as datetime
+    return dt.astimezone(timezone.utc)
+    
 # -----------------------
 # XML helpers
 # -----------------------
@@ -89,7 +95,12 @@ def _parse_rss2(root):
         date = parse_date(_get_text(item, "pubDate", "dc:date"))
         link = _get_text(item, "link")
         if link:
-            items.append({"source": feed_title, "title": title, "date": date, "link": link})
+            items.append({
+                "source": feed_title,
+                "title": title,
+                "date": date,
+                "link": link,
+            })
     return items
 
 # -----------------------
