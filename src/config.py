@@ -1,3 +1,5 @@
+from datetime import timezone, timedelta
+
 FEED_URLS = [
     "https://feeds.arstechnica.com/arstechnica/technology-lab",
     "https://www.fastcompany.com/technology/rss",
@@ -15,10 +17,19 @@ FEED_URLS = [
     "https://news.ycombinator.com/rss"
 ]
 
-HEADERS = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64)'}
-
 NS = {
     'atom': 'http://www.w3.org/2005/Atom',
     'rss1': 'http://purl.org/rss/1.0/',
     'dc': 'http://purl.org/dc/elements/1.1/'
+}
+
+TZ_MAP = {
+    "EST": timezone(timedelta(hours=-5)),
+    "EDT": timezone(timedelta(hours=-4)),
+    "CST": timezone(timedelta(hours=-6)),
+    "CDT": timezone(timedelta(hours=-5)),
+    "MST": timezone(timedelta(hours=-7)),
+    "MDT": timezone(timedelta(hours=-6)),
+    "PST": timezone(timedelta(hours=-8)),
+    "PDT": timezone(timedelta(hours=-7)),
 }
