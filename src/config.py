@@ -23,13 +23,21 @@ NS = {
     'dc': 'http://purl.org/dc/elements/1.1/'
 }
 
-TZ_MAP = {
-    "EST": timezone(timedelta(hours=-5)),
-    "EDT": timezone(timedelta(hours=-4)),
-    "CST": timezone(timedelta(hours=-6)),
-    "CDT": timezone(timedelta(hours=-5)),
-    "MST": timezone(timedelta(hours=-7)),
-    "MDT": timezone(timedelta(hours=-6)),
-    "PST": timezone(timedelta(hours=-8)),
-    "PDT": timezone(timedelta(hours=-7)),
+TZ_OFFSETS = {
+    "PST": -8,
+    "PDT": -7,
+    "MST": -7,
+    "MDT": -6,
+    "CST": -6,
+    "CDT": -5,
+    "EST": -5,
+    "EDT": -4,
+    "GMT": 0,
+    "UTC": 0,
+    "CET": 1,
+    "CEST": 2,
+    "IST": 5.5,
+    "JST": 9,
+    "AEST": 10,
+    "AEDT": 11
 }

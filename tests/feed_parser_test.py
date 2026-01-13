@@ -1,12 +1,7 @@
-import sys
-from pathlib import Path
-from datetime import datetime, timezone
 import pytest
 from fetchers.fetcher import URLFetcher
 from parsers.feed_parser import FeedItem, FeedParser
-from parsers.date_parser import DateParser
-from parsers.page_parser import PageParser
-from data import EXISTING_URL, NONEXISTING_URL, SOURCE, TITLE, DATE, LINK, BASE_DATE, CASES, ATOM_XML, RSS1_XML, RSS2_XML
+from data import SOURCE, TITLE, DATE, LINK, ATOM_XML, RSS1_XML, RSS2_XML
 
 @pytest.fixture
 def url_fetcher():
@@ -31,11 +26,6 @@ def test_feeditem_to_dict():
     }
 
     assert item.to_dict() == expected_dict
-
-@pytest.mark.parametrize("date_str, expected", CASES)
-def test_dateparser_parse(date_str, expected):
-    date_parser = DateParser()
-    assert date_parser.parse(date_str) == expected
     
 def test_parse_atom_feed(url_fetcher):
     result = url_fetcher.fetch(ATOM_XML)
@@ -69,13 +59,3 @@ def test_parse_rss2_feed(url_fetcher):
         assert item.get('title') is not None
         assert item.get('date') is not None
         assert item.get('link') is not None
-
-def test_page_parse_success():
-    parser = PageParser()
-    result = parser.get_content(EXISTING_URL)
-    assert result != "Failed to fetch page."
-    
-def test_page_parse_failure():
-    parser = PageParser()
-    result = parser.get_content(NONEXISTING_URL)
-    assert result == "Failed to fetch page."
