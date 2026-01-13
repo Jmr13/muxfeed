@@ -1,5 +1,5 @@
 import pytest
-from parsers.date_parser import DateParser
+from src.parsers.date_parser import DateParser
 from data import CASES
 
 @pytest.mark.parametrize("date_str, expected", CASES)

@@ -1,8 +1,8 @@
 from typing import Optional, List, Dict
 from datetime import datetime
 import xml.etree.ElementTree as ET
-from config import NS
-from parsers.date_parser import DateParser
+from src.config import NS
+from src.parsers.date_parser import DateParser
 
 class FeedItem:
     def __init__(self, source: str, title: str, date: Optional[datetime], link: str):

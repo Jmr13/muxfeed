@@ -1,5 +1,5 @@
 import curses
-from parsers.page_parser import PageParser
+from src.parsers.page_parser import PageParser
 
 class FeedUI:
     def __init__(self, entries):

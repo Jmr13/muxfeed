@@ -2,7 +2,7 @@ import sys
 from pathlib import Path
 import pytest
 import requests
-from fetchers.fetcher import URLFetcher, FetchResult
+from src.fetchers.fetcher import URLFetcher, FetchResult
 from data import EXISTING_URL, NONEXISTING_URL
 
 @pytest.fixture

@@ -2,7 +2,7 @@ import time
 from abc import ABC, abstractmethod
 from datetime import datetime, timezone, timedelta
 from typing import Optional, List
-from config import TZ_OFFSETS
+from src.config import TZ_OFFSETS
 
 class DateParseStrategy(ABC):
     @abstractmethod

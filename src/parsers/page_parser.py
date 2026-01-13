@@ -1,6 +1,6 @@
 from typing import Optional, List
 from bs4 import BeautifulSoup
-from fetchers.fetcher import URLFetcher
+from src.fetchers.fetcher import URLFetcher
 
 class PageParser:
     def __init__(self, url: Optional[str] = None):

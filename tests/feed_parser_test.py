@@ -1,6 +1,6 @@
 import pytest
-from fetchers.fetcher import URLFetcher
-from parsers.feed_parser import FeedItem, FeedParser
+from src.fetchers.fetcher import URLFetcher
+from src.parsers.feed_parser import FeedItem, FeedParser
 from data import SOURCE, TITLE, DATE, LINK, ATOM_XML, RSS1_XML, RSS2_XML
 
 @pytest.fixture

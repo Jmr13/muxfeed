@@ -1,8 +1,8 @@
-from tui.ui import FeedUI
-from parsers.feed_parser import FeedParser
-from fetchers.fetcher import URLFetcher
+from src.tui.ui import FeedUI
+from src.parsers.feed_parser import FeedParser
+from src.fetchers.fetcher import URLFetcher
 from datetime import datetime
-from config import FEED_URLS
+from src.config import FEED_URLS
 
 def run():
     url_fetcher = URLFetcher()
@@ -21,3 +21,6 @@ def run():
 
     ui = FeedUI(all_entries)
     ui.launch()
+    
+if __name__ == "__main__":
+    run()
