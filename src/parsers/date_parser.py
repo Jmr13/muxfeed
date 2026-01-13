@@ -1,72 +1,69 @@
+import time
 from abc import ABC, abstractmethod
 from datetime import datetime, timezone, timedelta
 from typing import Optional, List
 from config import TZ_OFFSETS
-import time
 
 class DateParseStrategy(ABC):
     @abstractmethod
     def parse(self, date_str: str) -> Optional[datetime]:
         pass
-
+            
 class ISOFormatStrategy(DateParseStrategy):
     def parse(self, date_str: str) -> Optional[datetime]:
         try:
-            dt = datetime.fromisoformat(date_str.replace("Z", "+00:00"))
-            return dt
+            return datetime.strptime(date_str, "%Y-%m-%dT%H:%M:%S")
         except ValueError:
             return None
 
-class RFC1FormatStrategy(DateParseStrategy):
+class ISOFormatTzStrategy(DateParseStrategy):
     def parse(self, date_str: str) -> Optional[datetime]:
         try:
-            dt = datetime.strptime(date_str, "%a, %d %b %Y %H:%M:%S %Z")
+            return datetime.strptime(date_str, "%Y-%m-%dT%H:%M:%S%z")
+        except ValueError:
+            return None
+            
+class RFCFormatStrategy(DateParseStrategy):
+    def parse(self, date_str: str) -> Optional[datetime]:
+        try:
+            dt = datetime.strptime(date_str, "%a, %d %b %Y %H:%M:%S")
             return dt
         except ValueError:
             return None
 
-class RFC2FormatStrategy(DateParseStrategy):
+class RFCFormatTz1Strategy(DateParseStrategy):
     def parse(self, date_str: str) -> Optional[datetime]:
         try:
             dt = datetime.strptime(date_str, "%a, %d %b %Y %H:%M:%S %z")
             return dt
         except Exception:
             return None
-
-class CustomTZAbbrStrategy:
+            
+class RFCFormatTz2Strategy:
     def parse(self, date_str: str) -> Optional[datetime]:
         try:
-            *date_parts, tz_abbr = date_str.split()
-            date_without_tz = " ".join(date_parts)
-            dt = datetime.strptime(date_without_tz, "%a, %d %b %Y %H:%M:%S")
-            if tz_abbr not in TZ_OFFSETS:
+            parts = date_str.split()
+            tz = parts[-1]
+            if tz not in TZ_OFFSETS:
                 return None
-            offset_hours = TZ_OFFSETS[tz_abbr]
-            dt_utc = dt - timedelta(hours=offset_hours)
+        
+            dt = datetime.strptime(" ".join(parts[:-1]), "%a, %d %b %Y %H:%M:%S")
+            utc_time = dt - timedelta(hours=TZ_OFFSETS[tz])
             local_offset = -time.timezone / 3600
-            dt_local = dt_utc + timedelta(hours=local_offset)
-            return dt_local
+            return utc_time + timedelta(hours=local_offset)
         except Exception:
-            return None
-    
-class DefaultUTCStrategy(DateParseStrategy):
-    def parse(self, date_str: str) -> Optional[datetime]:
-        try:
-            dt = datetime.strptime(date_str, "%a, %d %b %Y %H:%M:%S")
-            dt = dt.replace(tzinfo=timezone.utc)
-            return dt
-        except ValueError:
             return None
 
 class DateParser:
     def __init__(self, strategies: Optional[List[DateParseStrategy]] = None):
         # The order of strategies is necessary until we can determine which strategy to use per random date
+        # Strategies applicable to datetime with no time zones first
         self.strategies = strategies or [
-            DefaultUTCStrategy(),
-            CustomTZAbbrStrategy(),
             ISOFormatStrategy(),
-            RFC1FormatStrategy(),
-            RFC2FormatStrategy()
+            ISOFormatTzStrategy(),
+            RFCFormatStrategy(),
+            RFCFormatTz1Strategy(),
+            RFCFormatTz2Strategy()
         ]
 
     def _convertIntoLocalTimeZone(self, date_str: str) -> Optional[str]:
@@ -75,16 +72,8 @@ class DateParser:
         return date_str
             
     def _getDateParseStrategy(self, date_str: str) -> DateParseStrategy:
-        if "T" in date_str:
-            return ISOFormatStrategy()
-        elif date_str.endswith("UTC"):
-            return RFC2822UTCStrategy()
-        elif "+" in date_str or "-" in date_str[-5:]:
-            return RFC2822OffsetStrategy()
-        elif date_str[-3:].isalpha():
-            return CustomTZAbbrStrategy()
-        else:
-            return DefaultUTCStrategy()
+        # TODO: Determine which date parsing strategy to use
+        pass
 
     def parse(self, date_str: Optional[str]) -> Optional[str]:
         if not date_str:
