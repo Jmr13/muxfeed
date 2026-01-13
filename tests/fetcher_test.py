@@ -1,12 +1,8 @@
 import sys
 from pathlib import Path
-
 import pytest
 import requests
-
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
-
-from fetcher import URLFetcher, FetchResult
+from fetchers.fetcher import URLFetcher, FetchResult
 from data import EXISTING_URL, NONEXISTING_URL
 
 @pytest.fixture

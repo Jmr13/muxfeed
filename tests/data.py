@@ -18,7 +18,7 @@ CASES = [
     ("Mon, 12 Jan 2026 15:30:00 +0200", f"{BASE_DATE} | 1:30 PM"),
     ("Mon, 12 Jan 2026 15:30:00", f"{BASE_DATE} | 3:30 PM"),
     ("2026-01-12T15:30:00", f"{BASE_DATE} | 7:30 AM"),
-    ("Mon, 12 Jan 2026 17:30:33 EST", f"{BASE_DATE} | 9:30 AM"),
+    ("Mon, 12 Jan 2026 17:30:33 EST", f"{BASE_DATE} | 10:30 PM"),
     (None, None),
     ("invalid date string", None),
 ]

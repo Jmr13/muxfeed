@@ -1,13 +1,11 @@
 import sys
 from pathlib import Path
 from datetime import datetime, timezone
-
 import pytest
-
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
-
-from fetcher import URLFetcher
-from parser import FeedItem, DateParser, FeedParser, PageParser
+from fetchers.fetcher import URLFetcher
+from parsers.feed_parser import FeedItem, FeedParser
+from parsers.date_parser import DateParser
+from parsers.page_parser import PageParser
 from data import EXISTING_URL, NONEXISTING_URL, SOURCE, TITLE, DATE, LINK, BASE_DATE, CASES, ATOM_XML, RSS1_XML, RSS2_XML
 
 @pytest.fixture
@@ -36,7 +34,8 @@ def test_feeditem_to_dict():
 
 @pytest.mark.parametrize("date_str, expected", CASES)
 def test_dateparser_parse(date_str, expected):
-    assert DateParser.parse(date_str) == expected
+    date_parser = DateParser()
+    assert date_parser.parse(date_str) == expected
     
 def test_parse_atom_feed(url_fetcher):
     result = url_fetcher.fetch(ATOM_XML)

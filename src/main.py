@@ -1,10 +1,10 @@
-from ui import launch_ui
-from parser import PageParser, FeedParser
-from fetcher import URLFetcher
+from tui.ui import FeedUI
+from parsers.feed_parser import FeedParser
+from fetchers.fetcher import URLFetcher
 from datetime import datetime
 from config import FEED_URLS
 
-def main():
+def run():
     url_fetcher = URLFetcher()
     all_entries = []
 
@@ -19,7 +19,5 @@ def main():
 
     all_entries.sort(key=lambda x: x['parsed_date'], reverse=True)
 
-    launch_ui(all_entries)
-    
-if __name__ == "__main__":
-    main()
+    ui = FeedUI(all_entries)
+    ui.launch()

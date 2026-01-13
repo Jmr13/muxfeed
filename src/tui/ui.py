@@ -1,5 +1,5 @@
 import curses
-from parser import PageParser
+from parsers.page_parser import PageParser
 
 class FeedUI:
     def __init__(self, entries):
@@ -96,7 +96,3 @@ class FeedUI:
     
         self.stdscr.refresh()
         self.stdscr.getch()
-
-def launch_ui(entries):
-    ui = FeedUI(entries)
-    ui.launch()
