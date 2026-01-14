@@ -26,30 +26,29 @@ class ISOFormatTzStrategy(DateParseStrategy):
 class RFCFormatStrategy(DateParseStrategy):
     def parse(self, date_str: str) -> Optional[datetime]:
         try:
-            dt = datetime.strptime(date_str, "%a, %d %b %Y %H:%M:%S")
-            return dt
+            return datetime.strptime(date_str, "%a, %d %b %Y %H:%M:%S")
         except ValueError:
             return None
 
 class RFCFormatTz1Strategy(DateParseStrategy):
     def parse(self, date_str: str) -> Optional[datetime]:
         try:
-            dt = datetime.strptime(date_str, "%a, %d %b %Y %H:%M:%S %z")
-            return dt
+            return datetime.strptime(date_str, "%a, %d %b %Y %H:%M:%S %z")
         except Exception:
             return None
             
 class RFCFormatTz2Strategy:
     def parse(self, date_str: str) -> Optional[datetime]:
         try:
-            parts = date_str.split()
-            tz = parts[-1]
-            if tz not in TZ_OFFSETS:
-                return None
-        
-            dt = datetime.strptime(" ".join(parts[:-1]), "%a, %d %b %Y %H:%M:%S")
-            utc_time = dt - timedelta(hours=TZ_OFFSETS[tz])
+            # Get the timezone
+            *dt_parts, tz = date_str.split()
+            offset = TZ_OFFSETS.get(tz)
+    
+            # Convert the timezone abbreviation to UTC
+            dt = datetime.strptime(" ".join(dt_parts), "%a, %d %b %Y %H:%M:%S")
+            utc_time = dt - timedelta(hours=offset)
             local_offset = -time.timezone / 3600
+            
             return utc_time + timedelta(hours=local_offset)
         except Exception:
             return None
