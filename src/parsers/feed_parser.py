@@ -3,6 +3,9 @@ from datetime import datetime
 import xml.etree.ElementTree as ET
 from src.config import NS
 from src.parsers.date_parser import DateParser
+from abc import ABC, abstractmethod
+from typing import List, Optional
+import xml.etree.ElementTree as ET
 
 class FeedItem:
     def __init__(self, source: str, title: str, date: Optional[datetime], link: str):
@@ -18,23 +21,16 @@ class FeedItem:
             "date": self.date,
             "link": self.link,
         }
-        
-class FeedParser:
-    def __init__(self, xml_bytes: bytes):
-        if not xml_bytes:
-            self.root: Optional[ET.Element] = None
-            return
-        try:
-            self.root = ET.fromstring(xml_bytes)
-        except ET.ParseError:
-            self.root = None
+
+class BaseFeedParser(ABC):
+    def __init__(self, root: ET.Element):
+        self.root = root
         self.date_parser = DateParser()
 
+    @abstractmethod
     def parse(self) -> List[FeedItem]:
-        if self.root is None:
-            return []
-        return self._parse_atom() + self._parse_rss1() + self._parse_rss2()
-
+        pass
+    
     def _get_text(self, elem, *tags, default="") -> str:
         for tag in tags:
             text = elem.findtext(tag, default=None, namespaces=NS)
@@ -42,14 +38,16 @@ class FeedParser:
                 return text.strip()
         return default
 
+class AtomParser(BaseFeedParser):
     def _get_atom_link(self, entry) -> Optional[str]:
         for link in entry.findall("atom:link", NS):
             if link.get("rel") == "alternate" and link.get("href"):
                 return link.get("href").strip()
         first = entry.find("atom:link", NS)
-        return first.get("href").strip() if first is not None else None
+        href = first.get("href") if first is not None else None
+        return href.strip() if href else None
 
-    def _parse_atom(self) -> List[FeedItem]:
+    def parse(self) -> List[FeedItem]:
         items = []
         feed_title = self._get_text(self.root, "atom:title") or ""
         for entry in self.root.findall(".//atom:entry", NS):
@@ -60,7 +58,8 @@ class FeedParser:
                 items.append(FeedItem(feed_title, title, date, link))
         return items
 
-    def _parse_rss1(self) -> List[FeedItem]:
+class RSS1Parser(BaseFeedParser):
+    def parse(self) -> List[FeedItem]:
         items = []
         feed_title = self._get_text(self.root, ".//rss1:title") or ""
         for item in self.root.findall(".//rss1:item", NS):
@@ -71,7 +70,8 @@ class FeedParser:
                 items.append(FeedItem(feed_title, title, date, link))
         return items
 
-    def _parse_rss2(self) -> List[FeedItem]:
+class RSS2Parser(BaseFeedParser):
+    def parse(self) -> List[FeedItem]:
         items = []
         feed_title = self._get_text(self.root, ".//channel/title") or ""
         for item in self.root.findall(".//item"):
@@ -80,4 +80,24 @@ class FeedParser:
             link = self._get_text(item, "link")
             if link:
                 items.append(FeedItem(feed_title, title, date, link))
+        return items
+
+class FeedParser:
+    def __init__(self, xml_bytes: bytes):
+        try:
+            self.root = ET.fromstring(xml_bytes)
+        except ET.ParseError:
+            self.root = None
+        self.parsers = [
+            AtomParser(self.root),
+            RSS1Parser(self.root),
+            RSS2Parser(self.root),
+        ]
+
+    def parse(self) -> List[FeedItem]:
+        items = []
+        if self.root is None:
+            return items
+        for parser in self.parsers:
+            items.extend(parser.parse())
         return items

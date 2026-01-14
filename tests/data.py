@@ -24,6 +24,19 @@ CASES = [
     ("invalid date string", None)
 ]
 
-ATOM_XML = "https://gist.githubusercontent.com/brucebolt/b91e348a928536dddd417829d2b4c0fd/raw/cop26.atom"
-RSS1_XML = "https://rss.slashdot.org/Slashdot/slashdotMain"
-RSS2_XML = "https://www.inquirer.net/fullfeed/"
+ATOM_XML_FEEDS = [
+    "https://rss.arxiv.org/atom/cs",
+    "https://gist.githubusercontent.com/brucebolt/b91e348a928536dddd417829d2b4c0fd/raw/cop26.atom",
+    "https://www.techstination.com/atom",
+    "https://newpipe.net/blog/feeds/news.atom"
+]
+    
+RSS1_XML_FEEDS = [
+    "https://rss.slashdot.org/Slashdot/slashdotMain"
+]
+
+RSS2_XML_FEEDS = [
+    "https://www.inquirer.net/fullfeed/",
+    "https://www.engadget.com/rss.xml",
+    "https://www.cnet.com/rss/news/"
+]
