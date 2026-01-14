@@ -1,4 +1,4 @@
-from src.tui.ui import FeedUI
+from src.tui.ui import UI
 from src.parsers.feed_parser import FeedParser
 from src.fetchers.fetcher import URLFetcher
 from datetime import datetime
@@ -19,7 +19,7 @@ def run():
 
     all_entries.sort(key=lambda x: x['parsed_date'], reverse=True)
 
-    ui = FeedUI(all_entries)
+    ui = UI(all_entries)
     ui.launch()
     
 if __name__ == "__main__":

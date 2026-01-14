@@ -29,7 +29,7 @@ class BaseFeedParser(ABC):
 
     @abstractmethod
     def parse(self) -> List[FeedItem]:
-        pass
+        raise NotImplementedError
     
     def _get_text(self, elem, *tags, default="") -> str:
         for tag in tags:
