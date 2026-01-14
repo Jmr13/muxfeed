@@ -6,18 +6,14 @@ class UIComponentFactoryInterface(ABC):
     def create_component(self, component_type, **kwargs):
         pass
     
-class UIComponentFactory:
+class UIComponentFactory(UIComponentFactoryInterface):
     @staticmethod
     def create_component(component_type, **kwargs):
         if component_type == "title_bar":
-            return TitleBar(kwargs.get("text", ""))
+            return TitleBar(**kwargs)
         elif component_type == "entry_list":
-            return EntryList(
-                kwargs.get("entries", []),
-                kwargs.get("selected", 0),
-                kwargs.get("start_index", 0)
-            )
+            return EntryList(**kwargs)
         elif component_type == "entry_details":
-            return EntryDetails(kwargs.get("entry"))
+            return EntryDetails(**kwargs)
         else:
             raise ValueError(f"Unknown component type: {component_type}")

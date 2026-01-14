@@ -31,7 +31,6 @@ def test_feeditem_to_dict():
 @pytest.mark.parametrize("feed_url", ATOM_XML_FEEDS)
 def test_parse_atom_feed(feed_url, url_fetcher):
     result = url_fetcher.fetch(feed_url)
-    root = ET.fromstring(result.content)
     parser = FeedParser(result.content)
     items = [item.to_dict() for item in parser.parse()]
     
@@ -44,7 +43,6 @@ def test_parse_atom_feed(feed_url, url_fetcher):
 @pytest.mark.parametrize("feed_url", RSS1_XML_FEEDS)
 def test_parse_rss1_feed(feed_url, url_fetcher):
     result = url_fetcher.fetch(feed_url)
-    root = ET.fromstring(result.content)
     parser = FeedParser(result.content)
     items = [item.to_dict() for item in parser.parse()]
     
@@ -57,7 +55,6 @@ def test_parse_rss1_feed(feed_url, url_fetcher):
 @pytest.mark.parametrize("feed_url", RSS2_XML_FEEDS)
 def test_parse_rss2_feed(feed_url, url_fetcher):
     result = url_fetcher.fetch(feed_url)
-    root = ET.fromstring(result.content)
     parser = FeedParser(result.content)
     items = [item.to_dict() for item in parser.parse()]
     

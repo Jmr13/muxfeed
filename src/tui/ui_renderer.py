@@ -1,8 +1,8 @@
-from src.tui.ui_component_factory import UIComponentFactory
+from src.tui.ui_component_factory import UIComponentFactoryInterface
 
 class UIRenderer:
-    def __init__(self, factory=None):
-        self.factory = factory or UIComponentFactory()
+    def __init__(self, factory):
+        self.factory = factory
 
     def draw(self, stdscr, model, title_text):
         stdscr.erase()
@@ -25,4 +25,4 @@ class UIRenderer:
         details = self.factory.create_component("entry_details", entry=entry)
         details.draw(stdscr)
         stdscr.refresh()
-        stdscr.getch() 
+        stdscr.getch()
