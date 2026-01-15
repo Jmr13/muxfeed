@@ -1,0 +1,155 @@
+classDiagram
+    %% src/app
+    note for FeedApp "src/app/feed_app.py"
+    class FeedApp
+        FeedApp: + feed_manager FeedManager(FEED_URLS, URLFetcher())
+        FeedApp: + ui_factory UIComponentFactory()
+        FeedApp: - _getEntries()
+        FeedApp: + run()
+    note for FeedManager "src/app/feed_manager.py"
+    class FeedManager
+        FeedManager: + urls List[str]
+        FeedManager: + fetcher URLFetcher
+        FeedManager: + parser_class FeedParser
+        FeedManager: - _fetch_feed(url str)
+        FeedManager: - _parse_feed(xml_bytes bytes)
+        FeedManager: - _parse_date(date_str str)
+        FeedManager: + fetch_and_parse() -> List[Dict]
+        
+    %% src/fetchers
+    note for FetchResult "src/fetchers/fetcher.py"
+    class FetchResult
+        <<interface>> FetchResult
+            FetchResult: bool ok
+            FetchResult: Optional[bytes] = None content
+            FetchResult: Optional[int] = None status_code
+            FetchResult: Optional[str] = None error
+    note for URLFetcher "src/fetchers/fetcher.py"
+    class URLFetcher
+        URLFetcher: timeout float = 10.0
+        URLFetcher: retries int = 3
+        URLFetcher: backoff_factor float = 0.5
+        URLFetcher: status_forcelist Optional[Sequence[int]] = None
+        URLFetcher: headers Optional[Dict[str, str]] = None
+        URLFetcher: session Optional[requests.Session] = None
+        URLFetcher: _create_session() -> requests.Session
+        URLFetcher: fetch(url str) -> FetchResult
+    
+    %% src/parsers
+    note for DateParseStrategy "src/parsers/date_parser.py"
+    class DateParseStrategy
+        <<Abstract>> DateParseStrategy
+            DateParseStrategy: bool ok
+            DateParseStrategy: Optional[bytes] = None content
+            DateParseStrategy: Optional[int] = None status_code
+            DateParseStrategy: Optional[str] = None error
+    note for ISOFormatStrategy "src/parsers/date_parser.py"
+    class ISOFormatStrategy
+        ISOFormatStrategy: parse(date_str str) -> Optional[datetime]
+    note for ISOFormatTzStrategy "src/parsers/date_parser.py"
+    class ISOFormatTzStrategy
+        ISOFormatTzStrategy: parse(date_str str) -> Optional[datetime]
+    note for RFCFormatStrategy "src/parsers/date_parser.py"
+    class RFCFormatStrategy
+        RFCFormatStrategy: parse(date_str str) -> Optional[datetime]
+    note for RFCFormatTz1Strategy "src/parsers/date_parser.py"
+    class RFCFormatTz1Strategy
+        RFCFormatTz1Strategy: parse(date_str str) -> Optional[datetime]
+    note for RFCFormatTz2Strategy "src/parsers/date_parser.py"
+    class RFCFormatTz2Strategy
+        RFCFormatTz2Strategy: parse(date_str str) -> Optional[datetime]
+    note for DateParser "src/parsers/date_parser.py"
+    class DateParser
+        DateParser: strategies Optional[List[DateParseStrategy]] = None
+    
+    class FeedItem
+        FeedItem: source str
+        FeedItem: title str
+        FeedItem: date Optional[datetime]
+        FeedItem: link str
+        FeedItem: to_dict() -> Dict
+    
+    class BaseFeedParser
+        <<Abstract>> BaseFeedParser
+            BaseFeedParser: root ET.Element
+            BaseFeedParser: date_parser DateParser()
+        BaseFeedParser: parse() -> List[FeedItem]
+        BaseFeedParser: _get_text(elem, *tags, default="") -> str
+    class AtomParser
+        AtomParser: _get_atom_link(entry) -> Optional[str]
+        AtomParser: parse() -> List[FeedItem]
+    class RSS1Parser
+        RSS1Parser: parse() -> List[FeedItem]
+    class RSS2Parser
+        RSS2Parser: parse() -> List[FeedItem]
+    class FeedParser
+        FeedParser: xml_bytes Optional[bytes]
+        FeedParser: root ET.fromstring(xml_bytes)
+        FeedParser: parsers = List[BaseFeedParser]
+    
+    class PageParser
+        PageParser: url Optional[str] = url
+        PageParser: page_content Optional[bytes] = None
+        PageParser: paragraphs List[str] = []
+        PageParser: _fetch() -> bool
+        PageParser: _parse() -> None
+        PageParser: get_content(url str) -> str
+        
+    class UI
+        UI: model UIModel(entries)
+        UI: renderer UIRenderer(factory)
+        UI: controller UIController(model, renderer)
+        UI: launch()
+        
+    class UIComponentFactoryInterface   
+        <<Interface>> UIComponentFactoryInterface
+            UIComponentFactoryInterface: create_component(component_type, **kwargs)
+    class UIComponentFactory
+        UIComponentFactory: create_component(component_type, **kwargs)
+    
+    class UIComponent
+        UIComponent: draw(stdscr)
+    class TitleBar
+        TitleBar: draw(stdscr)
+    class EntryList
+        EntryList: draw(stdscr)
+    class EntryDetails
+        EntryDetails: draw(stdscr)
+        
+    class UIController
+        UIController: model
+        UIController: renderer
+        UIController: title_text
+        UIController: running
+        UIController: commands
+        UIController: _init_commands()
+        UIController: run(stdscr)
+        
+    class Command   
+        <<Interface>> Command
+            Command: execute(controller, stdscr)
+    class MoveDownCommand
+        MoveDownCommand: execute(controller, stdscr)
+    class MoveUpCommand
+        MoveUpCommand: execute(controller, stdscr)
+    class ShowDetailsCommand
+        ShowDetailsCommand: execute(controller, stdscr)
+    class QuitCommand
+        QuitCommand: execute(controller, stdscr)
+        
+    class UIModel
+        UIModel: _entries = entries
+        UIModel: _selected = 0
+        UIModel: _start_index = 0
+        UIModel: entries()
+        UIModel: selected()
+        UIModel: start_index()
+        UIModel: move_down(visible_count int)
+        UIModel: move_up()
+        UIModel: get_selected_entry()
+        UIModel: reset_selection()
+    
+    class UIRenderer
+        UIRenderer: factory = factory
+        UIRenderer: draw(stdscr, model, title_text)
+        UIRenderer: draw_details(stdscr, entry)
