@@ -1,12 +1,11 @@
 classDiagram
+    direction TB
     %% src/app
-    note for FeedApp "src/app/feed_app.py"
     class FeedApp
         FeedApp: + feed_manager FeedManager(FEED_URLS, URLFetcher())
         FeedApp: + ui_factory UIComponentFactory()
         FeedApp: - _getEntries()
         FeedApp: + run()
-    note for FeedManager "src/app/feed_manager.py"
     class FeedManager
         FeedManager: + urls List[str]
         FeedManager: + fetcher URLFetcher
@@ -17,14 +16,12 @@ classDiagram
         FeedManager: + fetch_and_parse() -> List[Dict]
         
     %% src/fetchers
-    note for FetchResult "src/fetchers/fetcher.py"
     class FetchResult
         <<interface>> FetchResult
             FetchResult: bool ok
             FetchResult: Optional[bytes] = None content
             FetchResult: Optional[int] = None status_code
             FetchResult: Optional[str] = None error
-    note for URLFetcher "src/fetchers/fetcher.py"
     class URLFetcher
         URLFetcher: timeout float = 10.0
         URLFetcher: retries int = 3
@@ -36,29 +33,22 @@ classDiagram
         URLFetcher: fetch(url str) -> FetchResult
     
     %% src/parsers
-    note for DateParseStrategy "src/parsers/date_parser.py"
     class DateParseStrategy
         <<Abstract>> DateParseStrategy
             DateParseStrategy: bool ok
             DateParseStrategy: Optional[bytes] = None content
             DateParseStrategy: Optional[int] = None status_code
             DateParseStrategy: Optional[str] = None error
-    note for ISOFormatStrategy "src/parsers/date_parser.py"
     class ISOFormatStrategy
         ISOFormatStrategy: parse(date_str str) -> Optional[datetime]
-    note for ISOFormatTzStrategy "src/parsers/date_parser.py"
     class ISOFormatTzStrategy
         ISOFormatTzStrategy: parse(date_str str) -> Optional[datetime]
-    note for RFCFormatStrategy "src/parsers/date_parser.py"
     class RFCFormatStrategy
         RFCFormatStrategy: parse(date_str str) -> Optional[datetime]
-    note for RFCFormatTz1Strategy "src/parsers/date_parser.py"
     class RFCFormatTz1Strategy
         RFCFormatTz1Strategy: parse(date_str str) -> Optional[datetime]
-    note for RFCFormatTz2Strategy "src/parsers/date_parser.py"
     class RFCFormatTz2Strategy
         RFCFormatTz2Strategy: parse(date_str str) -> Optional[datetime]
-    note for DateParser "src/parsers/date_parser.py"
     class DateParser
         DateParser: strategies Optional[List[DateParseStrategy]] = None
     
@@ -153,3 +143,75 @@ classDiagram
         UIRenderer: factory = factory
         UIRenderer: draw(stdscr, model, title_text)
         UIRenderer: draw_details(stdscr, entry)
+    
+    %% #######
+    %% FETCHERS
+    %% #######
+    
+    FetchResult -- URLFetcher
+    
+    %% #######
+    %% PARSERS
+    %% #######
+    
+    DateParseStrategy <|-- ISOFormatStrategy : Inherits
+    DateParseStrategy <|-- ISOFormatTzStrategy : Inherits
+    DateParseStrategy <|-- RFCFormatStrategy : Inherits
+    DateParseStrategy <|-- RFCFormatTz1Strategy : Inherits
+    DateParseStrategy <|-- RFCFormatTz2Strategy : Inherits
+    
+    ISOFormatStrategy -- DateParser
+    ISOFormatTzStrategy -- DateParser
+    RFCFormatStrategy -- DateParser
+    RFCFormatTz1Strategy -- DateParser
+    RFCFormatTz2Strategy -- DateParser
+    
+    BaseFeedParser <|-- AtomParser : Inherits
+    BaseFeedParser <|-- RSS1Parser : Inherits
+    BaseFeedParser <|-- RSS2Parser : Inherits
+    
+    FeedItem -- BaseFeedParser
+    
+    AtomParser -- FeedParser
+    RSS1Parser -- FeedParser
+    RSS2Parser -- FeedParser
+    
+    %% #######
+    %% TUI
+    %% #######
+    
+    UIComponentFactoryInterface <|-- UIComponentFactory : Inherits
+    UIComponentFactoryInterface -- UIRenderer
+    
+    UIComponent <|-- TitleBar : Inherits
+    UIComponent <|-- EntryList : Inherits
+    UIComponent <|-- EntryDetails : Inherits
+    
+    TitleBar -- UIComponentFactory
+    EntryList -- UIComponentFactory
+    EntryDetails -- UIComponentFactory
+    
+    Command <|-- MoveDownCommand : Inherits
+    Command <|-- MoveUpCommand : Inherits
+    Command <|-- ShowDetailsCommand : Inherits
+    Command <|-- QuitCommand : Inherits
+    
+    MoveDownCommand -- UIController 
+    MoveUpCommand -- UIController
+    ShowDetailsCommand -- UIController
+    QuitCommand -- UIController 
+    
+    UIModel -- UI
+    UIRenderer -- UI
+    UIController -- UI
+    
+    %% #######
+    %% APP
+    %% #######
+    
+    PageParser -- FeedManager
+    FeedParser -- FeedManager
+    DateParser -- FeedManager
+    URLFetcher -- FeedManager
+    
+    FeedManager -- FeedApp
