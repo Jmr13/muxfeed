@@ -29,7 +29,7 @@ class BaseFeedParser(ABC):
 
     @abstractmethod
     def parse(self) -> List[FeedItem]:
-        pass
+        raise NotImplementedError
     
     def _get_text(self, elem, *tags, default="") -> str:
         for tag in tags:
@@ -83,7 +83,10 @@ class RSS2Parser(BaseFeedParser):
         return items
 
 class FeedParser:
-    def __init__(self, xml_bytes: bytes):
+    def __init__(self, xml_bytes: Optional[bytes]):
+        self.root = None
+        if not xml_bytes:
+            return
         try:
             self.root = ET.fromstring(xml_bytes)
         except ET.ParseError:
