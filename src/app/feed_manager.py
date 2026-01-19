@@ -1,16 +1,21 @@
 from datetime import datetime
-from typing import List, Dict
+from typing import List, Dict, Optional, Type
 
 from src.parsers.feed_parser import FeedParser
 from src.fetchers.fetcher import URLFetcher
 
 class FeedManager:
-    def __init__(self, urls: List[str], fetcher: URLFetcher, parser_class=FeedParser):
+    def __init__(
+        self,
+        urls: List[str],
+        fetcher: URLFetcher,
+        parser_class: Type[FeedParser] = FeedParser
+    ):
         self.urls = urls
         self.fetcher = fetcher
         self.parser_class = parser_class
 
-    def _fetch_feed(self, url: str):
+    def _fetch_feed(self, url: str) -> Optional[bytes]:
         try:
             response = self.fetcher.fetch(url)
             if response and getattr(response, "content", None):
@@ -20,19 +25,22 @@ class FeedManager:
             print(f"Failed to fetch {url}: {e}")
         return None
 
-    def _parse_feed(self, xml_bytes: bytes) -> List[Dict]:
+    def _parse_feed(self, xml_bytes: bytes) -> List[Dict[str, object]]:
         parser = self.parser_class(xml_bytes)
         return [item.to_dict() for item in parser.parse()]
 
     @staticmethod
-    def _parse_date(date_str: str) -> datetime:
+    def _parse_date(date_str: Optional[str]) -> datetime:
+        if not date_str:
+            return datetime.min
+
         try:
             return datetime.strptime(date_str, "%B %d, %Y | %I:%M %p")
         except Exception:
             return datetime.min
-            
-    def fetch_and_parse(self) -> List[Dict]:
-        all_entries: List[Dict] = []
+
+    def fetch_and_parse(self) -> List[Dict[str, object]]:
+        all_entries: List[Dict[str, object]] = []
 
         for url in self.urls:
             result = self._fetch_feed(url)

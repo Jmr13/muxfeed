@@ -1,3 +1,4 @@
+from typing import Dict, List
 from src.tui.ui import UI
 from src.tui.ui_component_factory import UIComponentFactory
 from src.app.feed_manager import FeedManager
@@ -10,7 +11,7 @@ class FeedApp:
         self.feed_manager = FeedManager(FEED_URLS, URLFetcher())
         self.ui_factory = UIComponentFactory()
     
-    def _getEntries(self):
+    def _getEntries(self) -> List[Dict]:
         entries = self.feed_manager.fetch_and_parse()
         return entries
         

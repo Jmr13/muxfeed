@@ -1,3 +1,11 @@
+from typing import List, TypedDict
+
+class EntryDict(TypedDict):
+    title: str
+    date: str
+    link: str
+    source: str
+
 class UIModel:
     def __init__(self, entries):
         self._entries = entries
@@ -28,7 +36,7 @@ class UIModel:
             if self._selected < self._start_index:
                 self._start_index -= 1
 
-    def get_selected_entry(self):
+    def get_selected_entry(self) -> EntryDict:
         if not self._entries:
             return None
         return self._entries[self._selected]

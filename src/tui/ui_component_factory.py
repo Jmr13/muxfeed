@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from src.tui.ui_components import TitleBar, EntryList, EntryDetails
+from src.tui.ui_components import UIComponent, TitleBar, EntryList, EntryDetails
 
 class UIComponentFactoryInterface(ABC):
     @abstractmethod
@@ -8,7 +8,7 @@ class UIComponentFactoryInterface(ABC):
     
 class UIComponentFactory(UIComponentFactoryInterface):
     @staticmethod
-    def create_component(component_type, **kwargs):
+    def create_component(component_type, **kwargs) -> UIComponent:
         if component_type == "title_bar":
             return TitleBar(**kwargs)
         elif component_type == "entry_list":

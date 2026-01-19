@@ -91,6 +91,8 @@ class FeedParser:
             self.root = ET.fromstring(xml_bytes)
         except ET.ParseError:
             self.root = None
+
+        # TODO: Determine the type of FeedParser to be used
         self.parsers = [
             AtomParser(self.root),
             RSS1Parser(self.root),
