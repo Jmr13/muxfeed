@@ -33,22 +33,40 @@ class EntryList(UIComponent):
             except curses.error:
                 pass
 
-class EntryDetails(UIComponent):
+import curses
+from src.parsers.page_parser import PageParser
+
+class EntryDetails:
+    """Displays the full content of a selected entry with scroll support."""
     def __init__(self, entry):
         self.entry = entry
+        self.parser = PageParser()
+        self.lines = self._load_content()
+        self.start_line = 0  # track scrolling
 
-    def draw(self, stdscr):
-        stdscr.clear()
-        parser = PageParser()
-        content = parser.get_content(self.entry['link'])
-        lines = content.splitlines()
-        height, width = stdscr.getmaxyx()
-        for i, line in enumerate(lines):
-            if i >= height - 1:
+    def _load_content(self):
+        """Fetch and parse page content into lines."""
+        content = PageParser().get_content(self.entry['link'])
+        lines = [line for line in content.splitlines() if line]
+        return lines or ["No readable content found."]
+
+    def draw(self, stdscr, height, width):
+        """Render the entry content using current scroll position."""
+        stdscr.erase()
+        total_lines = len(self.lines)
+
+        for i in range(height - 1):
+            if self.start_line + i >= total_lines:
                 break
             try:
-                stdscr.addstr(i + 1, 2, line[:width - 2])
+                stdscr.addstr(i, 0, self.lines[self.start_line + i][:width - 1])
             except curses.error:
-                pass
+                continue
+
+        # Status bar
+        status = f"Viewing article ({self.start_line + 1}-{min(self.start_line + height - 1, total_lines)}/{total_lines}) - q to quit"
+        try:
+            stdscr.addstr(height - 1, 0, status[:width - 1], curses.A_REVERSE)
+        except curses.error:
+            pass
         stdscr.refresh()
-        stdscr.getch()

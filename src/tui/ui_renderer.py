@@ -3,6 +3,7 @@ from src.tui.ui_component_factory import UIComponentFactoryInterface
 class UIRenderer:
     def __init__(self, factory):
         self.factory = factory
+        self.current_details = None  # track details view
 
     def draw(self, stdscr, model, title_text):
         stdscr.erase()
@@ -19,10 +20,10 @@ class UIRenderer:
         title_bar.draw(stdscr)
         entry_list.draw(stdscr)
         stdscr.refresh()
-
+        
     def draw_details(self, stdscr, entry):
-        stdscr.erase()
-        details = self.factory.create_component("entry_details", entry=entry)
-        details.draw(stdscr)
+        """Draw details page without blocking input."""
+        self.current_details = self.factory.create_component("entry_details", entry=entry)
+        height, width = stdscr.getmaxyx()
+        self.current_details.draw(stdscr, height, width)
         stdscr.refresh()
-        stdscr.getch()
