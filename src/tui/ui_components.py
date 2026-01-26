@@ -1,4 +1,5 @@
 import curses
+import textwrap
 from src.parsers.page_parser import PageParser
 
 class UIComponent:
@@ -33,40 +34,48 @@ class EntryList(UIComponent):
             except curses.error:
                 pass
 
-import curses
-from src.parsers.page_parser import PageParser
-
 class EntryDetails:
-    """Displays the full content of a selected entry with scroll support."""
     def __init__(self, entry):
         self.entry = entry
-        self.parser = PageParser()
-        self.lines = self._load_content()
-        self.start_line = 0  # track scrolling
+        self.raw_lines = self._load_content()
+        self.lines = []
+        self.start_line = 0
 
     def _load_content(self):
-        """Fetch and parse page content into lines."""
-        content = PageParser().get_content(self.entry['link'])
+        content = PageParser().get_content(self.entry["link"])
         lines = [line for line in content.splitlines() if line]
         return lines or ["No readable content found."]
 
+    def _wrap_lines(self, width):
+        wrapped = []
+        for raw in self.raw_lines:
+            wrapped.extend(textwrap.wrap(raw, width=width) or [""])
+        return wrapped
+
     def draw(self, stdscr, height, width):
-        """Render the entry content using current scroll position."""
         stdscr.erase()
+
+        self.lines = self._wrap_lines(width - 1)
+
         total_lines = len(self.lines)
 
         for i in range(height - 1):
-            if self.start_line + i >= total_lines:
+            idx = self.start_line + i
+            if idx >= total_lines:
                 break
             try:
-                stdscr.addstr(i, 0, self.lines[self.start_line + i][:width - 1])
+                stdscr.addstr(i, 0, self.lines[idx])
             except curses.error:
-                continue
+                pass
 
-        # Status bar
-        status = f"Viewing article ({self.start_line + 1}-{min(self.start_line + height - 1, total_lines)}/{total_lines}) - q to quit"
+        status = (
+            f"Viewing article "
+            f"({self.start_line + 1}-{min(self.start_line + height - 1, total_lines)}/{total_lines})"
+            f" - q to quit"
+        )
         try:
             stdscr.addstr(height - 1, 0, status[:width - 1], curses.A_REVERSE)
         except curses.error:
             pass
+
         stdscr.refresh()
