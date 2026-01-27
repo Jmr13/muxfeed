@@ -18,10 +18,23 @@ class PageParser:
         if not self.page_content:
             self.paragraphs = []
             return
-
+    
         soup = BeautifulSoup(self.page_content, "html.parser")
-        body_text = soup.body.get_text(separator="\n", strip=True) if soup.body else ""
-        self.paragraphs = [line for line in body_text.splitlines() if line]
+    
+        for tag in soup.select("script, style, nav, header, footer, aside, form, noscript"):
+            tag.decompose()
+
+        main_content = soup.find(["article", "main"]) or soup.body
+        if not main_content:
+            self.paragraphs = []
+            return
+
+        paragraphs = [p.get_text(strip=True) for p in main_content.find_all("p")]
+        if not paragraphs:
+            body_text = main_content.get_text(separator="\n", strip=True)
+            paragraphs = [line for line in body_text.splitlines() if line.strip()]
+    
+        self.paragraphs = [p for p in paragraphs if len(p.split()) > 3]
 
     def get_content(self, url: str) -> str:
         self.url = url

@@ -34,6 +34,9 @@ class EntryList(UIComponent):
             except curses.error:
                 pass
 
+import textwrap
+import curses
+
 class EntryDetails:
     def __init__(self, entry):
         self.entry = entry
@@ -43,7 +46,7 @@ class EntryDetails:
 
     def _load_content(self):
         content = PageParser().get_content(self.entry["link"])
-        lines = [line for line in content.splitlines() if line]
+        lines = [line for line in content.splitlines() if line.strip()]
         return lines or ["No readable content found."]
 
     def _wrap_lines(self, width):
@@ -54,28 +57,25 @@ class EntryDetails:
 
     def draw(self, stdscr, height, width):
         stdscr.erase()
-
+    
+        title = self.entry.get("title", "Untitled")
+        wrapped_title = textwrap.wrap(title, width - 1)
         self.lines = self._wrap_lines(width - 1)
-
-        total_lines = len(self.lines)
-
-        for i in range(height - 1):
-            idx = self.start_line + i
-            if idx >= total_lines:
-                break
-            try:
-                stdscr.addstr(i, 0, self.lines[idx])
-            except curses.error:
-                pass
-
-        status = (
-            f"Viewing article "
-            f"({self.start_line + 1}-{min(self.start_line + height - 1, total_lines)}/{total_lines})"
-            f" - q to quit"
-        )
-        try:
-            stdscr.addstr(height - 1, 0, status[:width - 1], curses.A_REVERSE)
-        except curses.error:
-            pass
-
+    
+        title_height = len(wrapped_title) + 1
+        display_height = height - title_height - 1
+    
+        for i, line in enumerate(wrapped_title):
+            stdscr.addnstr(i, 0, line, width - 1, curses.A_BOLD)
+    
+        stdscr.addstr(len(wrapped_title), 0, "")
+    
+        for i, line in enumerate(self.lines[self.start_line:self.start_line + display_height]):
+            stdscr.addnstr(title_height + i, 0, line, width - 1)
+    
+        start = self.start_line + 1
+        end = min(self.start_line + display_height, len(self.lines))
+        status = f"Viewing article ({start}-{end}/{len(self.lines)}) - q to quit"
+        stdscr.addnstr(height - 1, 0, status, width - 1, curses.A_REVERSE)
+    
         stdscr.refresh()
