@@ -3,7 +3,7 @@ from src.tui.ui_component_factory import UIComponentFactoryInterface
 class UIRenderer:
     def __init__(self, factory):
         self.factory = factory
-        self.current_details = None  # track details view
+        self.current_details = None
 
     def draw(self, stdscr, model, title_text):
         stdscr.erase()

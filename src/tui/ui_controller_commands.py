@@ -31,7 +31,7 @@ class ScrollDownCommand(Command):
         if details:
             height, _ = stdscr.getmaxyx()
             total_lines = len(details.lines)
-            if details.start_line + height - 3 < total_lines:
+            if details.start_line + height - 4 < total_lines:
                 details.start_line += 1
                 details.draw(stdscr, height, _)
 

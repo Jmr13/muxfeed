@@ -27,7 +27,7 @@ class EntryList(UIComponent):
 
         for row, entry_idx in enumerate(range(self.start_index, end_index), start=1):
             entry = self.entries[entry_idx]
-            line = f"{entry['date']} | {entry['source']} | {entry['title']}"[:width - 1]
+            line = f"{entry['source']} | {entry['title']}"[:width - 1]
             attr = curses.A_REVERSE if entry_idx == self.selected else 0
             try:
                 stdscr.addstr(row, 0, line, attr)
@@ -54,25 +54,36 @@ class EntryDetails:
 
     def draw(self, stdscr, height, width):
         stdscr.erase()
-    
+
         title = self.entry.get("title", "Untitled")
+        date = self.entry.get("date", "None")
         wrapped_title = textwrap.wrap(title, width - 1)
+        wrapped_date = textwrap.wrap(date, width - 1)
         self.lines = self._wrap_lines(width - 1)
-    
-        title_height = len(wrapped_title) + 1
-        display_height = height - title_height - 1
-    
-        for i, line in enumerate(wrapped_title):
-            stdscr.addnstr(i, 0, line, width - 1, curses.A_BOLD)
-    
-        stdscr.addstr(len(wrapped_title), 0, "")
-    
+
+        title_height = len(wrapped_title)
+        date_height = len(wrapped_date)
+        header_height = title_height + date_height + 1
+        display_height = height - header_height - 1
+
+        row = 0
+        for line in wrapped_title:
+            stdscr.addnstr(row, 0, line, width - 1, curses.A_BOLD)
+            row += 1
+
+        for line in wrapped_date:
+            stdscr.addnstr(row, 0, line, width - 1, curses.A_DIM)
+            row += 1
+
+        stdscr.addstr(row, 0, "")
+        row += 1
+
         for i, line in enumerate(self.lines[self.start_line:self.start_line + display_height]):
-            stdscr.addnstr(title_height + i, 0, line, width - 1)
-    
+            stdscr.addnstr(row + i, 0, line, width - 1)
+
         start = self.start_line + 1
         end = min(self.start_line + display_height, len(self.lines))
         status = f"Viewing article ({start}-{end}/{len(self.lines)}) - q to quit"
         stdscr.addnstr(height - 1, 0, status, width - 1, curses.A_REVERSE)
-    
+
         stdscr.refresh()
