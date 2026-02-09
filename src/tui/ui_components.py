@@ -34,9 +34,6 @@ class EntryList(UIComponent):
             except curses.error:
                 pass
 
-import textwrap
-import curses
-
 class EntryDetails:
     def __init__(self, entry):
         self.entry = entry

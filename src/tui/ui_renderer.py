@@ -22,7 +22,6 @@ class UIRenderer:
         stdscr.refresh()
         
     def draw_details(self, stdscr, entry):
-        """Draw details page without blocking input."""
         self.current_details = self.factory.create_component("entry_details", entry=entry)
         height, width = stdscr.getmaxyx()
         self.current_details.draw(stdscr, height, width)
