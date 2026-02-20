@@ -27,6 +27,7 @@ class EntryList(UIComponent):
 
         for row, entry_idx in enumerate(range(self.start_index, end_index), start=1):
             entry = self.entries[entry_idx]
+            
             line = f"{entry['source']} | {entry['title']}"[:width - 1]
             attr = curses.A_REVERSE if entry_idx == self.selected else 0
             try:
@@ -46,44 +47,65 @@ class EntryDetails:
         lines = [line for line in content.splitlines() if line.strip()]
         return lines or ["No readable content found."]
 
-    def _wrap_lines(self, width):
+    def _format_header(self, width):
+        header_lines = []
+        
+        header_lines.append("-" * (width - 1))
+        
+        title = self.entry.get("title", "Untitled")
+        header_lines.extend(textwrap.wrap(title, width=width - 1) or [""])
+        
+        publication = self.entry.get("source", "Unknown Publication")
+        header_lines.extend(textwrap.wrap(publication, width=width - 1) or [""])
+        
+        date = self.entry.get("date", "Date not available")
+        header_lines.extend(textwrap.wrap(date, width=width - 1) or [""])
+        
+        header_lines.append("-" * (width - 1))
+        
+        header_lines.append("")
+        
+        return header_lines
+
+    def _wrap_content(self, width):
         wrapped = []
         for raw in self.raw_lines:
-            wrapped.extend(textwrap.wrap(raw, width=width) or [""])
+            wrapped_lines = textwrap.wrap(raw, width=width - 1) or [""]
+            wrapped.extend(wrapped_lines)
         return wrapped
 
     def draw(self, stdscr, height, width):
         stdscr.erase()
-
-        title = self.entry.get("title", "Untitled")
-        date = self.entry.get("date", "None")
-        wrapped_title = textwrap.wrap(title, width - 1)
-        wrapped_date = textwrap.wrap(date, width - 1)
-        self.lines = self._wrap_lines(width - 1)
-
-        title_height = len(wrapped_title)
-        date_height = len(wrapped_date)
-        header_height = title_height + date_height + 1
-        display_height = height - header_height - 1
-
-        row = 0
-        for line in wrapped_title:
-            stdscr.addnstr(row, 0, line, width - 1, curses.A_BOLD)
-            row += 1
-
-        for line in wrapped_date:
-            stdscr.addnstr(row, 0, line, width - 1, curses.A_DIM)
-            row += 1
-
-        stdscr.addstr(row, 0, "")
-        row += 1
-
-        for i, line in enumerate(self.lines[self.start_line:self.start_line + display_height]):
-            stdscr.addnstr(row + i, 0, line, width - 1)
-
-        start = self.start_line + 1
-        end = min(self.start_line + display_height, len(self.lines))
-        status = f"Viewing article ({start}-{end}/{len(self.lines)}) - q to quit"
-        stdscr.addnstr(height - 1, 0, status, width - 1, curses.A_REVERSE)
-
+        
+        header_lines = self._format_header(width)
+        content_lines = self._wrap_content(width)
+        
+        self.lines = header_lines + content_lines
+        
+        header_height = len(header_lines)
+        display_height = height - 2
+        
+        start_idx = self.start_line
+        end_idx = min(start_idx + display_height, len(self.lines))
+        
+        for i, line_idx in enumerate(range(start_idx, end_idx)):
+            line = self.lines[line_idx]
+            try:
+                if line_idx == 1:
+                    stdscr.addnstr(i, 0, line, width - 1, curses.A_BOLD)
+                else:
+                    stdscr.addnstr(i, 0, line, width - 1)
+            except curses.error:
+                pass
+        
+        total_lines = len(self.lines)
+        start_display = start_idx + 1
+        end_display = min(end_idx, total_lines)
+        status = f"Viewing article ({start_display}-{end_display}/{total_lines}) - q to quit"
+        
+        try:
+            stdscr.addnstr(height - 1, 0, status, width - 1, curses.A_REVERSE)
+        except curses.error:
+            pass
+        
         stdscr.refresh()

@@ -29,21 +29,25 @@ class ScrollDownCommand(Command):
     def execute(self, controller, stdscr):
         details = controller.renderer.current_details
         if details:
-            height, _ = stdscr.getmaxyx()
+            height, width = stdscr.getmaxyx()
             total_lines = len(details.lines)
-            if details.start_line + height - 4 < total_lines:
+
+            visible_lines = height - 2
+            
+            if details.start_line + visible_lines < total_lines:
                 details.start_line += 1
-                details.draw(stdscr, height, _)
+                details.draw(stdscr, height, width)
 
 class ScrollUpCommand(Command):
     def execute(self, controller, stdscr):
         details = controller.renderer.current_details
         if details and details.start_line > 0:
             details.start_line -= 1
-            height, _ = stdscr.getmaxyx()
-            details.draw(stdscr, height, _)
+            height, width = stdscr.getmaxyx()
+            details.draw(stdscr, height, width)
 
 class QuitDetailsCommand(Command):
     def execute(self, controller, stdscr):
         if controller.view_mode == "details":
             controller.view_mode = "list"
+            controller.renderer.current_details = None
