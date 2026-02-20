@@ -1,4 +1,6 @@
 from datetime import timezone, timedelta
+from pathlib import Path
+from enum import Enum
 
 FEED_URLS = [
     "https://feeds.arstechnica.com/arstechnica/technology-lab",
@@ -40,4 +42,20 @@ TZ_OFFSETS = {
     "JST": 9,
     "AEST": 10,
     "AEDT": 11
+}
+
+class CacheStrategy(Enum):
+    MEMORY_ONLY = "memory_only"
+    PERSISTENT = "persistent"
+    HYBRID = "hybrid"
+    
+CACHE_CONFIG = {
+    'enabled': True,
+    'strategy': CacheStrategy.HYBRID,
+    'ttl': timedelta(minutes=15),
+    'max_memory_items': 100,
+    'persistent': True,
+    'cache_dir': Path.home() / '.cache' / 'rss-fetcher',
+    'respect_headers': True,
+    'stale_while_revalidate': True
 }

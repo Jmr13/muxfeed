@@ -28,7 +28,7 @@ class EntryList(UIComponent):
         for row, entry_idx in enumerate(range(self.start_index, end_index), start=1):
             entry = self.entries[entry_idx]
             
-            line = f"{entry['source']} | {entry['title']}"[:width - 1]
+            line = f"{entry['title']}"[:width - 1]
             attr = curses.A_REVERSE if entry_idx == self.selected else 0
             try:
                 stdscr.addstr(row, 0, line, attr)
