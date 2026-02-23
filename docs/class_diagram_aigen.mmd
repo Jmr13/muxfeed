@@ -1,0 +1,378 @@
+classDiagram
+    %% Fetcher Layer
+    class CachedURLFetcher {
+        -float timeout
+        -int retries
+        -float backoff_factor
+        -Sequence~int~ status_forcelist
+        -Dict~str, str~ headers
+        -CacheConfig cache_config
+        -Cache cache
+        -Session session
+        +__init__(timeout, retries, backoff_factor, status_forcelist, headers, cache_config)
+        +_default_headers() Dict~str, str~
+        +_create_session() Session
+        +_prepare_headers(cached) Dict~str, str~
+        +fetch(url, force_refresh) FetchResult
+        +fetch_batch(urls, force_refresh) Dict~str, FetchResult~
+        +clear_cache()
+        +get_cache_stats() Dict
+    }
+    
+    class FetchResult {
+        <<dataclass>>
+        +bool ok
+        +Optional~bytes~ content
+        +Optional~int~ status_code
+        +Optional~str~ error
+        +bool cached
+        +bool from_cache
+        +Optional~float~ age
+    }
+    
+    class Cache {
+        -CacheConfig config
+        -CacheStats stats
+        -Dict~str, CachedResponse~ _memory_cache
+        +__init__(config)
+        +_ensure_cache_dir()
+        +_get_cache_key(url) str
+        +_get_persistent_path(key) Path
+        +_save_persistent(key, response)
+        +_load_persistent(key) Optional~CachedResponse~
+        +_evict_if_needed()
+        +get(url, allow_stale) Optional~CachedResponse~
+        +set(url, response)
+        +delete(url)
+        +clear()
+        +get_all_keys() List~str~
+        +get_stats() Dict~str, Any~
+    }
+    
+    class CachedResponse {
+        <<dataclass>>
+        +bytes content
+        +int status_code
+        +Dict~str, str~ headers
+        +datetime cached_at
+        +Optional~str~ etag
+        +Optional~str~ last_modified
+        +getAge() timedelta
+        +is_fresh(ttl) bool
+        +to_dict() Dict~str, Any~
+        +from_dict(data) CachedResponse
+    }
+    
+    class CacheConfig {
+        <<dataclass>>
+        +bool enabled
+        +CacheStrategy strategy
+        +timedelta ttl
+        +int max_memory_items
+        +bool persistent
+        +Optional~Path~ cache_dir
+        +bool respect_headers
+        +bool stale_while_revalidate
+        +__post_init__()
+    }
+    
+    class CacheStats {
+        +int hits
+        +int misses
+        +int stale_hits
+        +int stores
+        +int evictions
+        +int errors
+        +getTotalRequests() int
+        +getHitRate() float
+        +reset()
+        +to_dict() Dict~str, Any~
+    }
+    
+    class CacheStrategy {
+        <<enumeration>>
+        MEMORY_ONLY
+        PERSISTENT
+        HYBRID
+    }
+    
+    %% Parser Layer
+    class FeedParser {
+        -Element root
+        -List~BaseFeedParser~ parsers
+        +__init__(xml_bytes)
+        +parse() List~FeedItem~
+    }
+    
+    class BaseFeedParser {
+        <<abstract>>
+        #Element root
+        #DateParser date_parser
+        +__init__(root)
+        +parse()* List~FeedItem~
+        #_get_text(elem, *tags, default) str
+    }
+    
+    class AtomParser {
+        +__init__(root)
+        +_get_atom_link(entry) Optional~str~
+        +parse() List~FeedItem~
+    }
+    
+    class RSS1Parser {
+        +__init__(root)
+        +parse() List~FeedItem~
+    }
+    
+    class RSS2Parser {
+        +__init__(root)
+        +parse() List~FeedItem~
+    }
+    
+    class FeedItem {
+        +str source
+        +str title
+        +Optional~datetime~ date
+        +str link
+        +__init__(source, title, date, link)
+        +to_dict() Dict
+    }
+    
+    class DateParser {
+        -List~DateParseStrategy~ strategies
+        +__init__(strategies)
+        +_convertIntoLocalTimeZone(date_str) Optional~str~
+        +_getDateParseStrategy(date_str) DateParseStrategy
+        +parse(date_str) Optional~str~
+    }
+    
+    class DateParseStrategy {
+        <<abstract>>
+        +parse(date_str)* Optional~datetime~
+    }
+    
+    class ISOFormatStrategy {
+        +parse(date_str) Optional~datetime~
+    }
+    
+    class ISOFormatTzStrategy {
+        +parse(date_str) Optional~datetime~
+    }
+    
+    class RFCFormatStrategy {
+        +parse(date_str) Optional~datetime~
+    }
+    
+    class RFCFormatTz1Strategy {
+        +parse(date_str) Optional~datetime~
+    }
+    
+    class RFCFormatTz2Strategy {
+        +parse(date_str) Optional~datetime~
+    }
+    
+    class PageParser {
+        -Optional~str~ url
+        -Optional~bytes~ page_content
+        -List~str~ paragraphs
+        +__init__(url)
+        +_fetch() bool
+        +_parse()
+        +get_content(url) str
+    }
+    
+    %% TUI Layer
+    class UI {
+        -UIModel model
+        -UIRenderer renderer
+        -UIController controller
+        +__init__(entries, factory)
+        +launch()
+    }
+    
+    class UIModel {
+        -List~EntryDict~ _entries
+        -int _selected
+        -int _start_index
+        +getEntries() List~EntryDict~
+        +getSelected() int
+        +getStartIndex() int
+        +move_down(visible_count)
+        +move_up()
+        +get_selected_entry() EntryDict
+        +reset_selection()
+    }
+    
+    class EntryDict {
+        <<TypedDict>>
+        +str title
+        +str date
+        +str link
+        +str source
+    }
+    
+    class UIRenderer {
+        -UIComponentFactoryInterface factory
+        +Optional~EntryDetails~ current_details
+        +__init__(factory)
+        +draw(stdscr, model, title_text)
+        +draw_details(stdscr, entry)
+    }
+    
+    class UIController {
+        -UIModel model
+        -UIRenderer renderer
+        -str title_text
+        -bool running
+        -str view_mode
+        -Dict~int, Command~ list_commands
+        -Dict~int, Command~ details_commands
+        +__init__(model, renderer)
+        +_init_commands()
+        +run(stdscr)
+    }
+    
+    class UIComponentFactoryInterface {
+        <<interface>>
+        +create_component(component_type, **kwargs)* UIComponent
+    }
+    
+    class UIComponentFactory {
+        +create_component(component_type, **kwargs) UIComponent
+    }
+    
+    class UIComponent {
+        <<abstract>>
+        +draw(stdscr)*
+    }
+    
+    class TitleBar {
+        -str text
+        +__init__(text)
+        +draw(stdscr)
+    }
+    
+    class EntryList {
+        -List~EntryDict~ entries
+        -int selected
+        -int start_index
+        +__init__(entries, selected, start_index)
+        +draw(stdscr)
+    }
+    
+    class EntryDetails {
+        -EntryDict entry
+        -List~str~ raw_lines
+        -List~str~ lines
+        -int start_line
+        +__init__(entry)
+        +_load_content() List~str~
+        +_format_header(width) List~str~
+        +_wrap_content(width) List~str~
+        +draw(stdscr, height, width)
+    }
+    
+    class Command {
+        <<interface>>
+        +execute(controller, stdscr)*
+    }
+    
+    class MoveDownCommand {
+        +execute(controller, stdscr)
+    }
+    
+    class MoveUpCommand {
+        +execute(controller, stdscr)
+    }
+    
+    class ShowDetailsCommand {
+        +execute(controller, stdscr)
+    }
+    
+    class QuitCommand {
+        +execute(controller, stdscr)
+    }
+    
+    class ScrollDownCommand {
+        +execute(controller, stdscr)
+    }
+    
+    class ScrollUpCommand {
+        +execute(controller, stdscr)
+    }
+    
+    class QuitDetailsCommand {
+        +execute(controller, stdscr)
+    }
+    
+    %% Application Layer
+    class FeedApp {
+        -FeedManager feed_manager
+        -UIComponentFactory ui_factory
+        +__init__()
+        +_getEntries() List~Dict~
+        +run()
+    }
+    
+    class FeedManager {
+        -List~str~ urls
+        -URLFetcher fetcher
+        -Type~FeedParser~ parser_class
+        +__init__(urls, fetcher, parser_class)
+        +_fetch_feed(url) Optional~bytes~
+        +_parse_feed(xml_bytes) List~Dict~
+        +_parse_date(date_str) datetime
+        +fetch_and_parse() List~Dict~
+    }
+    
+    %% Aliases
+    URLFetcher <|-- CachedURLFetcher : implements
+    
+    %% Relationships
+    CachedURLFetcher *-- Cache : contains
+    CachedURLFetcher *-- CacheConfig : uses
+    Cache *-- CacheConfig : configured by
+    Cache *-- CacheStats : tracks
+    Cache o-- CachedResponse : stores
+    
+    BaseFeedParser <|-- AtomParser : extends
+    BaseFeedParser <|-- RSS1Parser : extends
+    BaseFeedParser <|-- RSS2Parser : extends
+    FeedParser o-- BaseFeedParser : uses
+    FeedParser --> FeedItem : creates
+    
+    DateParseStrategy <|-- ISOFormatStrategy : implements
+    DateParseStrategy <|-- ISOFormatTzStrategy : implements
+    DateParseStrategy <|-- RFCFormatStrategy : implements
+    DateParseStrategy <|-- RFCFormatTz1Strategy : implements
+    DateParseStrategy <|-- RFCFormatTz2Strategy : implements
+    DateParser o-- DateParseStrategy : uses
+    
+    PageParser --> CachedURLFetcher : uses
+    
+    UI *-- UIModel : contains
+    UI *-- UIRenderer : contains
+    UI *-- UIController : contains
+    UIRenderer --> UIComponentFactoryInterface : uses
+    UIComponentFactoryInterface <|-- UIComponentFactory : implements
+    UIComponentFactory --> UIComponent : creates
+    UIComponent <|-- TitleBar : extends
+    UIComponent <|-- EntryList : extends
+    EntryDetails --|> UIComponent : extends
+    
+    Command <|-- MoveDownCommand : implements
+    Command <|-- MoveUpCommand : implements
+    Command <|-- ShowDetailsCommand : implements
+    Command <|-- QuitCommand : implements
+    Command <|-- ScrollDownCommand : implements
+    Command <|-- ScrollUpCommand : implements
+    Command <|-- QuitDetailsCommand : implements
+    UIController o-- Command : uses
+    
+    FeedApp *-- FeedManager : contains
+    FeedApp *-- UIComponentFactory : contains
+    FeedApp --> UI : creates
+    
+    FeedManager --> URLFetcher : uses
+    FeedManager --> FeedParser : uses
+    FeedManager --> FeedItem : processes
