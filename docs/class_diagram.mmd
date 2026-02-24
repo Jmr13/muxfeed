@@ -22,16 +22,75 @@ classDiagram
             FetchResult: Optional[bytes] = None content
             FetchResult: Optional[int] = None status_code
             FetchResult: Optional[str] = None error
-    class URLFetcher
-        URLFetcher: timeout float = 10.0
-        URLFetcher: retries int = 3
-        URLFetcher: backoff_factor float = 0.5
-        URLFetcher: status_forcelist Optional[Sequence[int]] = None
-        URLFetcher: headers Optional[Dict[str, str]] = None
-        URLFetcher: session Optional[requests.Session] = None
-        URLFetcher: _create_session() -> requests.Session
-        URLFetcher: fetch(url str) -> FetchResult
-    
+            FetchResult: bool = False cached
+            FetchResult: bool = False from_cache
+            FetchResult: Optional[float] = None age
+    class CachedURLFetcher
+        CachedURLFetcher: timeout float = 10.0,
+        CachedURLFetcher: retries int = 3,
+        CachedURLFetcher: backoff_factor float = 0.5,
+        CachedURLFetcher: status_forcelist Optional[Sequence[int]] = None,
+        CachedURLFetcher: headers Optional[Dict[str, str]] = None,
+        CachedURLFetcher: cache_config = cache_config or CacheConfig()
+        CachedURLFetcher: cache Cache(cache_config)
+        CachedURLFetcher: session -> _create_session()
+        CachedURLFetcher: _default_headers() -> Dict[str, str]
+        CachedURLFetcher: _create_session(self) -> requests.Session
+        CachedURLFetcher: _prepare_headers(cached Optional[CachedResponse] = None) -> Dict[str, str]
+        CachedURLFetcher: fetch(url str, force_refresh bool = False) -> FetchResult
+        CachedURLFetcher: fetch_batch(urls list, force_refresh bool = False) -> Dict[str, FetchResult]
+        CachedURLFetcher: clear_cache()
+        CachedURLFetcher: get_cache_stats() -> Dict
+    class CachedResponse
+        CachedResponse: content bytes
+        CachedResponse: status_code int
+        CachedResponse: headers Dict[str, str]
+        CachedResponse: cached_at datetime
+        CachedResponse: etag Optional[str] = None
+        CachedResponse: last_modified Optional[str] = None
+        CachedResponse: age() -> timedelta
+        CachedResponse: is_fresh(ttl timedelta) -> bool
+        CachedResponse: to_dict() -> Dict[str, Any]
+        CachedResponse: from_dict(cls, data Dict[str, Any]) -> 'CachedResponse'
+    class CacheConfig
+        CacheConfig: enabled bool = True
+        CacheConfig: strategy CacheStrategy = CacheStrategy.HYBRID
+        CacheConfig: ttl timedelta = timedelta(minutes=15)
+        CacheConfig: max_memory_items int = 100
+        CacheConfig: persistent bool = True
+        CacheConfig: cache_dir Optional[Path] = None
+        CacheConfig: respect_headers bool = True
+        CacheConfig: stale_while_revalidate bool = True
+        CacheConfig: __post_init__
+    class CacheStats
+        CacheStats: hits = 0
+        CacheStats: misses = 0
+        CacheStats: stale_hits = 0
+        CacheStats: stores = 0
+        CacheStats: evictions = 0
+        CacheStats: errors = 0
+        CacheStats: total_requests() -> int
+        CacheStats: hit_rate() -> float
+        CacheStats: reset()
+        CacheStats: to_dict(self) -> Dict[str, Any]
+    class Cache
+        Cache: - config CacheConfig
+        Cache: - stats CacheStats
+        Cache: - _memory_cache Dict[str, CachedResponse]
+        Cache: + __init__(config CacheConfig)
+        Cache: - _ensure_cache_dir()
+        Cache: - _get_cache_key(url str) str
+        Cache: - _get_persistent_path(key str) Path
+        Cache: - _save_persistent(key str, response CachedResponse)
+        Cache: - _load_persistent(key str) Optional[CachedResponse]
+        Cache: - _evict_if_needed()
+        Cache: + get(url str, allow_stale bool) Optional[CachedResponse]
+        Cache: + set(url str, response CachedResponse)
+        Cache: + delete(url str)
+        Cache: + clear()
+        Cache: + get_all_keys() List[str]
+        Cache: + get_stats() Dict[str, Any]
+        
     %% src/parsers
     class DateParseStrategy
         <<Abstract>> DateParseStrategy
@@ -148,7 +207,12 @@ classDiagram
     %% FETCHERS
     %% #######
     
-    FetchResult -- URLFetcher
+    FetchResult -- CachedURLFetcher
+    
+    CacheConfig <|-- Cache
+    CacheStats <|-- Cache
+    CachedResponse <|-- Cache
+    Cache <|-- CachedURLFetcher
     
     %% #######
     %% PARSERS
