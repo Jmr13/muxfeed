@@ -33,6 +33,7 @@ class CachedResponse:
             'last_modified': self.last_modified
         }
     
+    # Without quotes in 'CachedResponse', Python would raise a NameError because CachedResponse isn't defined in the namespace yet
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'CachedResponse':
         return cls(

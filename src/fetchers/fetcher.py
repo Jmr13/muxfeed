@@ -5,7 +5,6 @@ from datetime import datetime
 from requests.adapters import HTTPAdapter, Retry
 from src.fetchers.cache import Cache, CacheConfig, CachedResponse
 
-
 @dataclass
 class FetchResult:
     ok: bool
@@ -15,7 +14,6 @@ class FetchResult:
     cached: bool = False
     from_cache: bool = False
     age: Optional[float] = None
-
 
 class CachedURLFetcher:
     def __init__(
