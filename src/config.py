@@ -1,23 +1,24 @@
-from datetime import timezone, timedelta
 from pathlib import Path
 from enum import Enum
+import json
 
-FEED_URLS = [
-    "https://feeds.arstechnica.com/arstechnica/technology-lab",
-    "https://www.fastcompany.com/technology/rss",
-    "https://www.inquirer.net/fullfeed/",
-    "https://news.mit.edu/rss/topic/artificial-intelligence2",
-    "https://nesslabs.com/feed",
-    "http://neurosciencenews.com/feed/",
-    "https://www.sciencedaily.com/rss/top/technology.xml",
-    "http://rss.slashdot.org/Slashdot/slashdotMain",
-    "https://www.slashgear.com/category/technology/feed/",
-    "https://techcrunch.com/feed/",
-    "https://www.theguardian.com/us/technology/rss",
-    "https://www.theverge.com/rss/tech/index.xml",
-    "http://venturebeat.com/feed/",
-    "https://news.ycombinator.com/rss"
-]
+FEEDS_FILE = Path(__file__).parent / "feeds.json"
+
+def load_feed_urls() -> list[str]:
+    if FEEDS_FILE.exists():
+        try:
+            with open(FEEDS_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            return []
+    return []
+
+def save_feed_urls(urls: list[str]) -> None:
+    FEEDS_FILE.parent.mkdir(parents=True, exist_ok=True)
+    with open(FEEDS_FILE, "w", encoding="utf-8") as f:
+        json.dump(urls, f, indent=2)
+
+FEED_URLS = load_feed_urls()
 
 NS = {
     'atom': 'http://www.w3.org/2005/Atom',
