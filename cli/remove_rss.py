@@ -4,7 +4,7 @@ from src.config import load_feed_urls, save_feed_urls
 
 def main():
     if len(sys.argv) < 2:
-        print("Usage: python -m src.cli.remove <comma_separated_rss_urls>")
+        print("Usage: python -m cli.remove <comma_separated_rss_urls>")
         return
 
     raw_input = " ".join(sys.argv[1:])

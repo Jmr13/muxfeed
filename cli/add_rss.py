@@ -9,7 +9,7 @@ def is_valid_url(url: str) -> bool:
 
 def main():
     if len(sys.argv) < 2:
-        print("Usage: python -m src.cli.add <comma_separated_rss_urls>")
+        print("Usage: python -m cli.add <comma_separated_rss_urls>")
         return
 
     raw_input = " ".join(sys.argv[1:])

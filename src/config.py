@@ -1,10 +1,11 @@
 from pathlib import Path
 from enum import Enum
+from typing import List
 import json
 
 FEEDS_FILE = Path(__file__).parent / "feeds.json"
 
-def load_feed_urls() -> list[str]:
+def load_feed_urls() -> List[str]:
     if FEEDS_FILE.exists():
         try:
             with open(FEEDS_FILE, "r", encoding="utf-8") as f:
@@ -13,7 +14,7 @@ def load_feed_urls() -> list[str]:
             return []
     return []
 
-def save_feed_urls(urls: list[str]) -> None:
+def save_feed_urls(urls: List[str]) -> None:
     FEEDS_FILE.parent.mkdir(parents=True, exist_ok=True)
     with open(FEEDS_FILE, "w", encoding="utf-8") as f:
         json.dump(urls, f, indent=2)
