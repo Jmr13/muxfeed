@@ -14,6 +14,19 @@ class MoveUpCommand(Command):
     def execute(self, controller, stdscr):
         controller.model.move_up()
 
+class ScrollLeftCommand(Command):
+    def execute(self, controller, stdscr):
+        if controller.view_mode == "list":
+            controller.model.scroll_title_left()
+            controller.renderer.draw(stdscr, controller.model, controller.title_text)
+
+class ScrollRightCommand(Command):
+    def execute(self, controller, stdscr):
+        if controller.view_mode == "list":
+            _, width = stdscr.getmaxyx()
+            controller.model.scroll_title_right(width)
+            controller.renderer.draw(stdscr, controller.model, controller.title_text)
+
 class ShowDetailsCommand(Command):
     def execute(self, controller, stdscr):
         entry = controller.model.get_selected_entry()
@@ -51,3 +64,4 @@ class QuitDetailsCommand(Command):
         if controller.view_mode == "details":
             controller.view_mode = "list"
             controller.renderer.current_details = None
+            controller.renderer.draw(stdscr, controller.model, controller.title_text)

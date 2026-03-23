@@ -14,7 +14,8 @@ class UIRenderer:
             "entry_list",
             entries=model.entries,
             selected=model.selected,
-            start_index=model.start_index
+            start_index=model.start_index,
+            scroll_x=model.scroll_x
         )
 
         title_bar.draw(stdscr)

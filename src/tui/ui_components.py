@@ -15,10 +15,11 @@ class TitleBar(UIComponent):
         stdscr.addstr(0, 0, self.text[:width - 1], curses.A_BOLD)
 
 class EntryList(UIComponent):
-    def __init__(self, entries, selected=0, start_index=0):
+    def __init__(self, entries, selected=0, start_index=0, scroll_x=0):
         self.entries = entries
         self.selected = selected
         self.start_index = start_index
+        self.scroll_x = scroll_x
 
     def draw(self, stdscr):
         height, width = stdscr.getmaxyx()
@@ -28,7 +29,26 @@ class EntryList(UIComponent):
         for row, entry_idx in enumerate(range(self.start_index, end_index), start=1):
             entry = self.entries[entry_idx]
             
-            line = f"{entry['title']}"[:width - 1]
+            full_title = entry['title']
+            visible_width = width - 1
+            
+            if entry_idx == self.selected:
+                start = self.scroll_x
+                end = start + visible_width
+            
+                end = min(end, len(full_title))
+            
+                visible_text = full_title[start:end]
+
+                if start > 0:
+                    visible_text = "..." + visible_text[3:]
+                if end < len(full_title):
+                    visible_text = visible_text[:-3] + "..."
+            
+                line = visible_text
+            else:
+                line = full_title[:visible_width]
+            
             attr = curses.A_REVERSE if entry_idx == self.selected else 0
             try:
                 stdscr.addstr(row, 0, line, attr)

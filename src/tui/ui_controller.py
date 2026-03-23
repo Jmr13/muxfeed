@@ -1,11 +1,15 @@
 import curses
-from src.tui.ui_controller_commands import MoveUpCommand, MoveDownCommand, ShowDetailsCommand, QuitCommand, QuitDetailsCommand, ScrollDownCommand, ScrollUpCommand
+from src.tui.ui_controller_commands import (
+    MoveUpCommand, MoveDownCommand, ShowDetailsCommand, QuitCommand, 
+    QuitDetailsCommand, ScrollDownCommand, ScrollUpCommand,
+    ScrollLeftCommand, ScrollRightCommand
+)
 
 class UIController:
     def __init__(self, model, renderer):
         self.model = model
         self.renderer = renderer
-        self.title_text = "News Feed (↑/↓ to scroll, Enter to view, q to quit)"
+        self.title_text = "News Feed (↑/↓/j/k to scroll, ←/→ to scroll title, Enter to view, q to quit)"
         self.running = True
         self.view_mode = "list"
         self._init_commands()
@@ -18,6 +22,8 @@ class UIController:
             ord('j'): MoveDownCommand(),
             curses.KEY_UP: MoveUpCommand(),
             ord('k'): MoveUpCommand(),
+            curses.KEY_LEFT: ScrollLeftCommand(),
+            curses.KEY_RIGHT: ScrollRightCommand(),
             curses.KEY_ENTER: ShowDetailsCommand(),
             10: ShowDetailsCommand(),
             13: ShowDetailsCommand(),
@@ -40,7 +46,7 @@ class UIController:
             if self.view_mode == "list":
                 self.renderer.draw(stdscr, self.model, self.title_text)
                 commands = self.list_commands
-            else:  # details view
+            else:
                 details = self.renderer.current_details
                 if details:
                     height, width = stdscr.getmaxyx()
