@@ -7,20 +7,24 @@ from abc import ABC, abstractmethod
 from typing import List, Optional
 import xml.etree.ElementTree as ET
 
-class FeedItem:
-    def __init__(self, source: str, title: str, date: Optional[datetime], link: str):
-        self.source = source
-        self.title = title
-        self.date = date
-        self.link = link
+from dataclasses import dataclass
+from datetime import datetime
+from typing import Optional
 
-    def to_dict(self) -> Dict:
-        return {
-            "source": self.source,
-            "title": self.title,
-            "date": self.date,
-            "link": self.link,
-        }
+@dataclass
+class FeedItem:
+    source: str
+    title: str
+    date: Optional[str]
+    link: str
+
+    def parsed_date(self) -> datetime:
+        if not self.date:
+            return datetime.min
+        try:
+            return datetime.strptime(self.date, "%B %d, %Y | %I:%M %p")
+        except Exception:
+            return datetime.min
 
 class BaseFeedParser(ABC):
     def __init__(self, root: ET.Element):

@@ -29,7 +29,7 @@ class EntryList(UIComponent):
         for row, entry_idx in enumerate(range(self.start_index, end_index), start=1):
             entry = self.entries[entry_idx]
             
-            full_title = entry['title']
+            full_title = entry.title
             visible_width = width - 1
             
             if entry_idx == self.selected:
@@ -63,7 +63,7 @@ class EntryDetails:
         self.start_line = 0
 
     def _load_content(self):
-        content = PageParser().get_content(self.entry["link"])
+        content = PageParser().get_content(self.entry.link)
         lines = [line for line in content.splitlines() if line.strip()]
         return lines or ["No readable content found."]
 
@@ -72,13 +72,13 @@ class EntryDetails:
         
         header_lines.append("-" * (width - 1))
         
-        title = self.entry.get("title", "Untitled")
+        title = self.entry.title
         header_lines.extend(textwrap.wrap(title, width=width - 1) or [""])
         
-        publication = self.entry.get("source", "Unknown Publication")
+        publication = self.entry.source
         header_lines.extend(textwrap.wrap(publication, width=width - 1) or [""])
         
-        date = self.entry.get("date", "Date not available")
+        date = self.entry.date
         header_lines.extend(textwrap.wrap(date, width=width - 1) or [""])
         
         header_lines.append("-" * (width - 1))
