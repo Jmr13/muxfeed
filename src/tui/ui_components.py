@@ -56,14 +56,15 @@ class EntryList(UIComponent):
                 pass
 
 class EntryDetails:
-    def __init__(self, entry):
+    def __init__(self, entry, page_parser):
         self.entry = entry
+        self.page_parser = page_parser
         self.raw_lines = self._load_content()
         self.lines = []
         self.start_line = 0
 
     def _load_content(self):
-        content = PageParser().get_content(self.entry.link)
+        content = self.page_parser.get_content(self.entry.link)
         lines = [line for line in content.splitlines() if line.strip()]
         return lines or ["No readable content found."]
 

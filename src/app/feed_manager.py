@@ -5,8 +5,8 @@ from src.fetchers.fetcher import URLFetcher
 from src.parsers.feed_parser import FeedParser, FeedItem
 
 class FeedFetcher:
-    def __init__(self):
-        self.fetcher = URLFetcher()
+    def __init__(self, fetcher: URLFetcher):
+        self.fetcher = fetcher
 
     def fetch(self, url: str) -> Optional[bytes]:
         try:
