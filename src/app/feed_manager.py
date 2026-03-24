@@ -1,57 +1,71 @@
 from datetime import datetime
 from typing import List, Dict, Optional, Type
-
 from src.parsers.feed_parser import FeedParser
 from src.fetchers.fetcher import URLFetcher
+from src.parsers.feed_parser import FeedParser, FeedItem
 
-class FeedManager:
-    def __init__(
-        self,
-        urls: List[str],
-        fetcher: URLFetcher,
-        parser_class: Type[FeedParser] = FeedParser
-    ):
-        self.urls = urls
-        self.fetcher = fetcher
-        self.parser_class = parser_class
+class FeedFetcher:
+    def __init__(self):
+        self.fetcher = URLFetcher()
 
-    def _fetch_feed(self, url: str) -> Optional[bytes]:
+    def fetch(self, url: str) -> Optional[bytes]:
         try:
-            response = self.fetcher.fetch(url)
-            if response and getattr(response, "content", None):
-                return response.content
-            print(f"Empty content from {url}")
-        except Exception as e:
-            print(f"Failed to fetch {url}: {e}")
+            result = self.fetcher.fetch(url)
+            if result and result.ok and result.content:
+                return result.content
+        except Exception:
+            pass
         return None
 
-    def _parse_feed(self, xml_bytes: bytes) -> List[Dict[str, object]]:
-        parser = self.parser_class(xml_bytes)
-        return [item.to_dict() for item in parser.parse()]
+class FeedParser:
+    def __init__(self, parser_class: Type[FeedParser] = FeedParser):
+        self.parser_class = parser_class
 
+    def parse(self, xml_bytes: bytes) -> List[FeedItem]:
+        parser = self.parser_class(xml_bytes)
+        return parser.parse()
+
+class FeedSorter:
     @staticmethod
-    def _parse_date(date_str: Optional[str]) -> datetime:
+    def _parse_date(date_str: str) -> datetime:
         if not date_str:
             return datetime.min
-
         try:
             return datetime.strptime(date_str, "%B %d, %Y | %I:%M %p")
         except Exception:
             return datetime.min
 
-    def fetch_and_parse(self) -> List[Dict[str, object]]:
-        all_entries: List[Dict[str, object]] = []
+    def sort(self, items: List[FeedItem]) -> List[FeedItem]:
+        return sorted(
+            items,
+            key=lambda x: self._parse_date(x.date),
+            reverse=True
+        )
+    
+class FeedManager:
+    def __init__(
+        self,
+        urls: List[str],
+        fetcher: FeedFetcher,
+        parser: FeedParser,
+        sorter: FeedSorter
+    ):
+        self.urls = urls
+        self.fetcher = fetcher
+        self.parser = parser
+        self.sorter = sorter
+
+    def get_entries(self) -> List[Dict]:
+        all_items: List[FeedItem] = []
 
         for url in self.urls:
-            result = self._fetch_feed(url)
-            if not result:
+            xml = self.fetcher.fetch(url)
+            if not xml:
                 continue
 
-            entries = self._parse_feed(result)
-            all_entries.extend(entries)
+            items = self.parser.parse(xml)
+            all_items.extend(items)
 
-        for entry in all_entries:
-            entry["parsed_date"] = self._parse_date(entry.get("date"))
+        sorted_items = self.sorter.sort(all_items)
 
-        all_entries.sort(key=lambda x: x["parsed_date"], reverse=True)
-        return all_entries
+        return [item.to_dict() for item in sorted_items]
