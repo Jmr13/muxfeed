@@ -37,7 +37,7 @@ class RFCFormatTz1Strategy(DateParseStrategy):
         except Exception:
             return None
             
-class RFCFormatTz2Strategy:
+class RFCFormatTz2Strategy(DateParseStrategy):
     def parse(self, date_str: str) -> Optional[datetime]:
         try:
             # Get the timezone
@@ -53,45 +53,62 @@ class RFCFormatTz2Strategy:
         except Exception:
             return None
 
-class DateParser:
-    def __init__(self, strategies: Optional[List[DateParseStrategy]] = None):
-        # The order of strategies is necessary until we can determine which strategy to use per random date
-        # Strategies applicable to datetime with no time zones first
-        self.strategies = strategies or [
-            ISOFormatStrategy(),
-            ISOFormatTzStrategy(),
-            RFCFormatStrategy(),
-            RFCFormatTz1Strategy(),
-            RFCFormatTz2Strategy()
-        ]
+class DateParseStrategyResolver:
+    def __init__(self):
+        self.iso = ISOFormatStrategy()
+        self.iso_tz = ISOFormatTzStrategy()
+        self.rfc = RFCFormatStrategy()
+        self.rfc_tz1 = RFCFormatTz1Strategy()
+        self.rfc_tz2 = RFCFormatTz2Strategy()
 
-    def _convertIntoLocalTimeZone(self, date_str: str) -> Optional[str]:
+    def resolve(self, date_str: str) -> DateParseStrategy:
+        if not date_str:
+            raise ValueError("Empty date string")
+
+        # ISO format (e.g. 2023-10-05T14:48:00)
+        if "T" in date_str:
+            if "+" in date_str or "-" in date_str[-6:]:
+                return self.iso_tz
+            return self.iso
+
+        # RFC formats (e.g. Tue, 10 Oct 2023 14:48:00 GMT)
+        if "," in date_str:
+            parts = date_str.split()
+
+            # Numeric timezone offset
+            if parts and (parts[-1].startswith("+") or parts[-1].startswith("-")):
+                return self.rfc_tz1
+
+            # Named timezone (GMT, EST, etc.)
+            if parts and parts[-1].isalpha():
+                return self.rfc_tz2
+
+            return self.rfc
+
+        # Fallback
+        return self.iso
+    
+class DateParser:
+    def __init__(self, resolver: Optional[DateParseStrategyResolver] = None):
+        self.resolver = resolver or DateParseStrategyResolver()
+
+    def _convert_into_local_timezone(self, date_str: str) -> Optional[str]:
         if date_str.tzinfo and date_str.utcoffset() != timezone.utc.utcoffset(date_str):
             return date_str.astimezone()
         return date_str
-            
-    def _getDateParseStrategy(self, date_str: str) -> DateParseStrategy:
-        # TODO: Determine which date parsing strategy to use
-        pass
 
     def parse(self, date_str: Optional[str]) -> Optional[str]:
         if not date_str:
             return None
-            
-        dt: Optional[datetime] = None
-        
-        # Apply all strategies until dt has a value
-        for strategy in self.strategies:  
-            dt = strategy.parse(date_str)  
-            if dt is not None:  
-                break
-            
-        # TODO: Apply _getDateParseStrategy to determine which strategy to use
-        # strategy = self._getDateParseStrategy(date_str)
-        # dt: Optional[datetime] = strategy.parse(date_str)
- 
+
+        try:
+            strategy = self.resolver.resolve(date_str)
+            dt = strategy.parse(date_str)
+        except Exception:
+            return None
+
         if dt is None:
             return None
-        
-        dt = self._convertIntoLocalTimeZone(dt)
+
+        dt = self._convert_into_local_timezone(dt)
         return dt.strftime("%B %d, %Y | %-I:%M %p")
