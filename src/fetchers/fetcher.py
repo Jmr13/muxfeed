@@ -1,9 +1,9 @@
 import requests
 from dataclasses import dataclass
-from typing import Optional, Dict, Sequence, Union
+from typing import Optional, Dict, Sequence
 from datetime import datetime
 from requests.adapters import HTTPAdapter, Retry
-from src.fetchers.cache import Cache, CacheConfig, CachedResponse
+from src.fetchers.cache import Cache, CachedResponse
 
 @dataclass
 class FetchResult:
@@ -15,27 +15,21 @@ class FetchResult:
     from_cache: bool = False
     age: Optional[float] = None
 
-class CachedURLFetcher:
+class URLFetcher:
     def __init__(
         self,
         timeout: float = 10.0,
         retries: int = 3,
         backoff_factor: float = 0.5,
         status_forcelist: Optional[Sequence[int]] = None,
-        headers: Optional[Dict[str, str]] = None,
-        cache_config: Optional[Union[CacheConfig, Dict]] = None,
+        headers: Optional[Dict[str, str]] = None
     ):
         self.timeout = timeout
         self.retries = retries
         self.backoff_factor = backoff_factor
         self.status_forcelist = status_forcelist or [408, 429, 500, 502, 503, 504]
         self.headers = headers or self._default_headers()
-        
-        if isinstance(cache_config, dict):
-            cache_config = CacheConfig(**cache_config)
-        self.cache_config = cache_config or CacheConfig()
-        self.cache = Cache(self.cache_config)
-        
+        self.cache = Cache()
         self.session = self._create_session()
     
     def _default_headers(self) -> Dict[str, str]:
@@ -72,7 +66,7 @@ class CachedURLFetcher:
     def _prepare_headers(self, cached: Optional[CachedResponse] = None) -> Dict[str, str]:
         headers = self.headers.copy()
         
-        if cached and self.cache_config.respect_headers:
+        if cached and self.cache._get_cache_respect_headers():
             if cached.etag:
                 headers['If-None-Match'] = cached.etag
             if cached.last_modified:
@@ -83,7 +77,7 @@ class CachedURLFetcher:
     def fetch(self, url: str, force_refresh: bool = False) -> FetchResult:
         cached = None
     
-        if not force_refresh and self.cache_config.enabled:
+        if not force_refresh and self.cache._get_cache_status():
             cached = self.cache.get(url, allow_stale=True)
     
         headers = self._prepare_headers(cached)
@@ -118,7 +112,7 @@ class CachedURLFetcher:
                 last_modified=response.headers.get("Last-Modified")
             )
     
-            if self.cache_config.enabled:
+            if self.cache._get_cache_status():
                 self.cache.set(url, new_cached)
     
             return FetchResult(
@@ -152,5 +146,3 @@ class CachedURLFetcher:
     
     def get_cache_stats(self) -> Dict:
         return self.cache.get_stats()
-
-URLFetcher = CachedURLFetcher

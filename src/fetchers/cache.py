@@ -4,7 +4,6 @@ from dataclasses import dataclass, asdict
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional, Dict, Any, List
-from enum import Enum
 from src.config import CacheStrategy
 
 @dataclass
@@ -47,7 +46,7 @@ class CachedResponse:
 
 @dataclass
 class CacheConfig:
-    enabled: bool = True
+    status: bool = True
     strategy: CacheStrategy = CacheStrategy.HYBRID
     ttl: timedelta = timedelta(minutes=15)
     max_memory_items: int = 100
@@ -96,8 +95,8 @@ class CacheStats:
         }
 
 class Cache:
-    def __init__(self, config: CacheConfig):
-        self.config = config
+    def __init__(self):
+        self.config = CacheConfig()
         self.stats = CacheStats()
         self._memory_cache: Dict[str, CachedResponse] = {}
         self._ensure_cache_dir()
@@ -113,6 +112,12 @@ class Cache:
         if not self.config.cache_dir:
             raise ValueError("Cache directory not configured")
         return self.config.cache_dir / f"{key}.cache"
+
+    def _get_cache_respect_headers(self):
+        return self.config.respect_headers
+
+    def _get_cache_status(self):
+        return self.config.status
     
     def _save_persistent(self, key: str, response: CachedResponse):
         if not self.config.persistent:
