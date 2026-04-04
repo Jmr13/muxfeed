@@ -2,7 +2,7 @@ from datetime import datetime
 
 # fetcher.py
 EXISTING_URL = "https://google.com"
-NONEXISTING_URL = "https://xyz.com"
+NONEXISTING_URL = "http://this-domain-does-not-exist-123456789.com"
 
 # parser.py
 SOURCE = "RSS Feed"
