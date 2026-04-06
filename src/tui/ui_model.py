@@ -48,7 +48,7 @@ class UIModel:
 
     def scroll_title_right(self, max_width):
         if self._selected < len(self._entries):
-            current_title = self._entries[self._selected]['title']
+            current_title = self._entries[self._selected].title
             max_scroll = max(0, len(current_title) - (max_width - 1))
             self._scroll_x = min(self._scroll_x + 10, max_scroll)
 

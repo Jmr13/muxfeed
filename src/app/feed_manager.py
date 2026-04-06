@@ -36,7 +36,7 @@ class FeedSorter:
             return datetime.min
 
     def sort(self, items):
-        return sorted(items, key=lambda x: x.parsed_date(), reverse=True)
+        return sorted(items, key=lambda x: self._parse_date(x.date), reverse=True)
     
 class FeedManager:
     def __init__(
