@@ -1,3 +1,4 @@
+import re
 import time
 from abc import ABC, abstractmethod
 from datetime import datetime, timezone, timedelta
@@ -70,28 +71,54 @@ class DateParser:
             return date_str.astimezone()
         return date_str
             
+    import re
+
     def _getDateParseStrategy(self, date_str: str) -> DateParseStrategy:
-        # TODO: Determine which date parsing strategy to use
-        pass
+        if not date_str:
+            return self.strategies[0]  # fallback
+
+        # ISO 8601 with timezone (e.g., 2023-10-05T14:48:00+0000)
+        if re.match(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:?\d{2}", date_str):
+            return ISOFormatTzStrategy()
+
+        # ISO 8601 without timezone (e.g., 2023-10-05T14:48:00)
+        if "T" in date_str:
+            return ISOFormatStrategy()
+
+        # RFC with numeric timezone (e.g., Tue, 05 Oct 2023 14:48:00 +0000)
+        if re.search(r"[+-]\d{4}", date_str):
+            return RFCFormatTz1Strategy()
+
+        # RFC with named timezone (e.g., Tue, 05 Oct 2023 14:48:00 GMT)
+        parts = date_str.split()
+        if parts and parts[-1] in TZ_OFFSETS:
+            return RFCFormatTz2Strategy()
+
+        # RFC without timezone (e.g., Tue, 05 Oct 2023 14:48:00)
+        if "," in date_str:
+            return RFCFormatStrategy()
+
+        # Fallback: try ISO basic
+        return ISOFormatStrategy()
 
     def parse(self, date_str: Optional[str]) -> Optional[str]:
         if not date_str:
             return None
-            
-        dt: Optional[datetime] = None
-        
-        # Apply all strategies until dt has a value
-        for strategy in self.strategies:  
-            dt = strategy.parse(date_str)  
-            if dt is not None:  
-                break
-            
-        # TODO: Apply _getDateParseStrategy to determine which strategy to use
-        # strategy = self._getDateParseStrategy(date_str)
-        # dt: Optional[datetime] = strategy.parse(date_str)
- 
+
+        if date_str.endswith("Z"):
+            date_str = date_str[:-1] + "+0000"
+
+        strategy = self._getDateParseStrategy(date_str)
+        dt: Optional[datetime] = strategy.parse(date_str)
+
+        if dt is None:
+            for strategy in self.strategies:
+                dt = strategy.parse(date_str)
+                if dt:
+                    break
+
         if dt is None:
             return None
-        
+
         dt = self._convertIntoLocalTimeZone(dt)
         return dt.strftime("%B %d, %Y | %-I:%M %p")
