@@ -5,8 +5,8 @@ from src.fetchers.fetcher import URLFetcher
 from src.parsers.feed_parser import FeedParser, FeedItem
 
 class FeedFetcher:
-    def __init__(self):
-        self.fetcher = URLFetcher()
+    def __init__(self, fetcher: URLFetcher):
+        self.fetcher = fetcher
 
     def fetch(self, url: str) -> Optional[bytes]:
         try:
@@ -35,12 +35,8 @@ class FeedSorter:
         except Exception:
             return datetime.min
 
-    def sort(self, items: List[FeedItem]) -> List[FeedItem]:
-        return sorted(
-            items,
-            key=lambda x: self._parse_date(x.date),
-            reverse=True
-        )
+    def sort(self, items):
+        return sorted(items, key=lambda x: x.parsed_date(), reverse=True)
     
 class FeedManager:
     def __init__(
@@ -68,4 +64,4 @@ class FeedManager:
 
         sorted_items = self.sorter.sort(all_items)
 
-        return [item.to_dict() for item in sorted_items]
+        return sorted_items

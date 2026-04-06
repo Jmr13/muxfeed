@@ -3,15 +3,21 @@ from bs4 import BeautifulSoup
 from src.fetchers.fetcher import URLFetcher
 
 class PageParser:
-    def __init__(self, url: Optional[str] = None):
-        self.url: Optional[str] = url
+    def __init__(self, fetcher: URLFetcher):
+        self.fetcher = fetcher
+        self.url: Optional[str] = None
         self.page_content: Optional[bytes] = None
         self.paragraphs: List[str] = []
 
     def _fetch(self) -> bool:
         if not self.url:
             return False
-        self.page_content = URLFetcher().fetch(self.url).content
+
+        result = self.fetcher.fetch(self.url)
+        if not result or not result.ok:
+            return False
+
+        self.page_content = result.content
         return bool(self.page_content)
 
     def _parse(self) -> None:

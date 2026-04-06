@@ -1,11 +1,17 @@
+from src.app.feed_manager import FeedFetcher, FeedManager, FeedParser, FeedSorter
+from src.fetchers.fetcher import URLFetcher
+from src.parsers.page_parser import PageParser
 from src.tui.ui import UI
 from src.tui.ui_component_factory import UIComponentFactory
-from src.app.feed_manager import FeedManager, FeedFetcher, FeedParser, FeedSorter
 from src.config import FEED_URLS
 
 class FeedApp:
     def __init__(self):
-        fetcher = FeedFetcher()
+        url_fetcher = URLFetcher()
+        page_parser = PageParser(url_fetcher)
+        factory = UIComponentFactory()
+
+        fetcher = FeedFetcher(url_fetcher)
         parser = FeedParser()
         sorter = FeedSorter()
 
@@ -15,11 +21,14 @@ class FeedApp:
             parser,
             sorter
         )
-        self.ui_factory = UIComponentFactory()
+
+        self.ui_factory = factory
+        self.page_parser = page_parser
     
-    def _get_entries(self):
-        return self.feed_service.get_entries()
-        
     def run(self):
-        ui = UI(self._get_entries(), self.ui_factory)
+        ui = UI(
+            self.feed_service.get_entries(),
+            self.ui_factory,
+            self.page_parser
+        )
         ui.launch()
