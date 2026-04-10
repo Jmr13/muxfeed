@@ -38,7 +38,7 @@ class RFCFormatTz1Strategy(DateParseStrategy):
         except Exception:
             return None
             
-class RFCFormatTz2Strategy:
+class RFCFormatTz2Strategy(DateParseStrategy):
     def parse(self, date_str: str) -> Optional[datetime]:
         try:
             # Get the timezone
@@ -70,36 +70,25 @@ class DateParser:
         if date_str.tzinfo and date_str.utcoffset() != timezone.utc.utcoffset(date_str):
             return date_str.astimezone()
         return date_str
-            
-    import re
 
+    
     def _getDateParseStrategy(self, date_str: str) -> DateParseStrategy:
         if not date_str:
-            return self.strategies[0]  # fallback
+            raise ValueError("Empty date string")
 
-        # ISO 8601 with timezone (e.g., 2023-10-05T14:48:00+0000)
-        if re.match(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:?\d{2}", date_str):
-            return ISOFormatTzStrategy()
+        if date_str[0].isdigit():
+            if date_str.endswith("+0000") or "+" in date_str[10:] or "-" in date_str[10:]:
+                return ISOFormatTzStrategy()
+            else:
+                return ISOFormatStrategy()
 
-        # ISO 8601 without timezone (e.g., 2023-10-05T14:48:00)
-        if "T" in date_str:
-            return ISOFormatStrategy()
-
-        # RFC with numeric timezone (e.g., Tue, 05 Oct 2023 14:48:00 +0000)
-        if re.search(r"[+-]\d{4}", date_str):
-            return RFCFormatTz1Strategy()
-
-        # RFC with named timezone (e.g., Tue, 05 Oct 2023 14:48:00 GMT)
-        parts = date_str.split()
-        if parts and parts[-1] in TZ_OFFSETS:
-            return RFCFormatTz2Strategy()
-
-        # RFC without timezone (e.g., Tue, 05 Oct 2023 14:48:00)
-        if "," in date_str:
-            return RFCFormatStrategy()
-
-        # Fallback: try ISO basic
-        return ISOFormatStrategy()
+        else:
+            if "+" in date_str:
+                return RFCFormatTz1Strategy()
+            elif date_str[-1].isalpha():
+                return RFCFormatTz2Strategy()
+            else:
+                return RFCFormatStrategy()
 
     def parse(self, date_str: Optional[str]) -> Optional[str]:
         if not date_str:
@@ -110,12 +99,6 @@ class DateParser:
 
         strategy = self._getDateParseStrategy(date_str)
         dt: Optional[datetime] = strategy.parse(date_str)
-
-        if dt is None:
-            for strategy in self.strategies:
-                dt = strategy.parse(date_str)
-                if dt:
-                    break
 
         if dt is None:
             return None
