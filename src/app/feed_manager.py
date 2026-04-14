@@ -17,7 +17,7 @@ class FeedFetcher:
             pass
         return None
 
-class FeedParser:
+class FeedProcessor:
     def __init__(self, parser_class: Type[FeedParser] = FeedParser):
         self.parser_class = parser_class
 

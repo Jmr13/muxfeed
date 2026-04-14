@@ -1,4 +1,4 @@
-from src.app.feed_manager import FeedFetcher, FeedManager, FeedParser, FeedSorter
+from src.app.feed_manager import FeedFetcher, FeedManager, FeedProcessor, FeedSorter
 from src.fetchers.fetcher import URLFetcher
 from src.parsers.page_parser import PageParser
 from src.tui.ui import UI
@@ -12,7 +12,7 @@ class FeedApp:
         factory = UIComponentFactory()
 
         fetcher = FeedFetcher(url_fetcher)
-        parser = FeedParser()
+        parser = FeedProcessor()
         sorter = FeedSorter()
 
         self.feed_service = FeedManager(

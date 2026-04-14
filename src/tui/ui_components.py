@@ -1,6 +1,5 @@
 import curses
 import textwrap
-from src.parsers.page_parser import PageParser
 
 class UIComponent:
     def draw(self, stdscr):

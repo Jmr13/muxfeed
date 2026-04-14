@@ -56,8 +56,6 @@ class RFCFormatTz2Strategy(DateParseStrategy):
 
 class DateParser:
     def __init__(self, strategies: Optional[List[DateParseStrategy]] = None):
-        # The order of strategies is necessary until we can determine which strategy to use per random date
-        # Strategies applicable to datetime with no time zones first
         self.strategies = strategies or [
             ISOFormatStrategy(),
             ISOFormatTzStrategy(),

@@ -15,7 +15,7 @@ class FetchResult:
     from_cache: bool = False
     age: Optional[float] = None
 
-class CachedURLFetcher:
+class URLFetcher:
     def __init__(
         self,
         timeout: float = 10.0,
@@ -152,5 +152,3 @@ class CachedURLFetcher:
     
     def get_cache_stats(self) -> Dict:
         return self.cache.get_stats()
-
-URLFetcher = CachedURLFetcher

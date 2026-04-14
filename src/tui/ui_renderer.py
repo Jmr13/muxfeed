@@ -1,5 +1,3 @@
-from src.tui.ui_component_factory import UIComponentFactoryInterface
-
 class UIRenderer:
     def __init__(self, factory, page_parser):
         self.factory = factory
