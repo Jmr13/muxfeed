@@ -1,3 +1,4 @@
+```mermaid
 classDiagram
     direction TB
     %% src/app
@@ -6,6 +7,15 @@ classDiagram
         FeedApp: + ui_factory UIComponentFactory()
         FeedApp: - _getEntries()
         FeedApp: + run()
+    class FeedFetcher
+        FeedFetcher: fetcher URLFetcher
+        FeedFetcher: fetch(url str) -> Optional[bytes]
+    class FeedProcessor
+        FeedProcessor: parser_class Type[FeedParser] 
+        FeedProcessor: parse
+    class FeedSorter
+        FeedSorter: _parse_date(date_str str) -> datetime
+        FeedSorter: sort(items)
     class FeedManager
         FeedManager: + urls List[str]
         FeedManager: + fetcher URLFetcher
@@ -16,31 +26,6 @@ classDiagram
         FeedManager: + fetch_and_parse() -> List[Dict]
         
     %% src/fetchers
-    class FetchResult
-        <<interface>> FetchResult
-            FetchResult: bool ok
-            FetchResult: Optional[bytes] = None content
-            FetchResult: Optional[int] = None status_code
-            FetchResult: Optional[str] = None error
-            FetchResult: bool = False cached
-            FetchResult: bool = False from_cache
-            FetchResult: Optional[float] = None age
-    class CachedURLFetcher
-        CachedURLFetcher: timeout float = 10.0,
-        CachedURLFetcher: retries int = 3,
-        CachedURLFetcher: backoff_factor float = 0.5,
-        CachedURLFetcher: status_forcelist Optional[Sequence[int]] = None,
-        CachedURLFetcher: headers Optional[Dict[str, str]] = None,
-        CachedURLFetcher: cache_config = cache_config or CacheConfig()
-        CachedURLFetcher: cache Cache(cache_config)
-        CachedURLFetcher: session -> _create_session()
-        CachedURLFetcher: _default_headers() -> Dict[str, str]
-        CachedURLFetcher: _create_session(self) -> requests.Session
-        CachedURLFetcher: _prepare_headers(cached Optional[CachedResponse] = None) -> Dict[str, str]
-        CachedURLFetcher: fetch(url str, force_refresh bool = False) -> FetchResult
-        CachedURLFetcher: fetch_batch(urls list, force_refresh bool = False) -> Dict[str, FetchResult]
-        CachedURLFetcher: clear_cache()
-        CachedURLFetcher: get_cache_stats() -> Dict
     class CachedResponse
         CachedResponse: content bytes
         CachedResponse: status_code int
@@ -90,6 +75,31 @@ classDiagram
         Cache: + clear()
         Cache: + get_all_keys() List[str]
         Cache: + get_stats() Dict[str, Any]
+    class FetchResult
+        <<interface>> FetchResult
+            FetchResult: bool ok
+            FetchResult: Optional[bytes] = None content
+            FetchResult: Optional[int] = None status_code
+            FetchResult: Optional[str] = None error
+            FetchResult: bool = False cached
+            FetchResult: bool = False from_cache
+            FetchResult: Optional[float] = None age
+    class URLFetcher
+        URLFetcher: timeout float = 10.0,
+        URLFetcher: retries int = 3,
+        URLFetcher: backoff_factor float = 0.5,
+        URLFetcher: status_forcelist Optional[Sequence[int]] = None,
+        URLFetcher: headers Optional[Dict[str, str]] = None,
+        URLFetcher: cache_config = cache_config or CacheConfig()
+        URLFetcher: cache Cache(cache_config)
+        URLFetcher: session -> _create_session()
+        URLFetcher: _default_headers() -> Dict[str, str]
+        URLFetcher: _create_session(self) -> requests.Session
+        URLFetcher: _prepare_headers(cached Optional[CachedResponse] = None) -> Dict[str, str]
+        URLFetcher: fetch(url str, force_refresh bool = False) -> FetchResult
+        URLFetcher: fetch_batch(urls list, force_refresh bool = False) -> Dict[str, FetchResult]
+        URLFetcher: clear_cache()
+        URLFetcher: get_cache_stats() -> Dict
         
     %% src/parsers
     class DateParseStrategy
@@ -110,6 +120,9 @@ classDiagram
         RFCFormatTz2Strategy: parse(date_str str) -> Optional[datetime]
     class DateParser
         DateParser: strategies Optional[List[DateParseStrategy]] = None
+        DateParser: _convertIntoLocalTimeZone(date_str str) -> Optional[str]
+        DateParser: _getDateParseStrategy(date_str str) -> DateParseStrategy
+        DateParser: parse(date_str Optional[str]) -> Optional[str]
     
     class FeedItem
         FeedItem: source str
@@ -137,6 +150,7 @@ classDiagram
         FeedParser: parsers = List[BaseFeedParser]
     
     class PageParser
+        PageParser: fetcher URLFetcher
         PageParser: url Optional[str] = url
         PageParser: page_content Optional[bytes] = None
         PageParser: paragraphs List[str] = []
@@ -144,6 +158,7 @@ classDiagram
         PageParser: _parse() -> None
         PageParser: get_content(url str) -> str
         
+    %% src/tui
     class UI
         UI: model UIModel(entries)
         UI: renderer UIRenderer(factory)
@@ -207,75 +222,78 @@ classDiagram
     %% FETCHERS
     %% #######
     
-    FetchResult -- CachedURLFetcher
-    
-    CacheConfig <|-- Cache
-    CacheStats <|-- Cache
-    CachedResponse <|-- Cache
-    Cache <|-- CachedURLFetcher
-    
+    CachedResponse <.. URLFetcher : inherits
+    CachedResponse <.. Cache : inherits
+    FetchResult <.. URLFetcher : inherits
+    CacheConfig *-- Cache : composite
+    CacheStats  *-- Cache : composite
+    Cache       *-- URLFetcher : composite
+
     %% #######
     %% PARSERS
     %% #######
-    
-    DateParseStrategy <|-- ISOFormatStrategy : Inherits
-    DateParseStrategy <|-- ISOFormatTzStrategy : Inherits
-    DateParseStrategy <|-- RFCFormatStrategy : Inherits
-    DateParseStrategy <|-- RFCFormatTz1Strategy : Inherits
-    DateParseStrategy <|-- RFCFormatTz2Strategy : Inherits
-    
-    ISOFormatStrategy -- DateParser
-    ISOFormatTzStrategy -- DateParser
-    RFCFormatStrategy -- DateParser
-    RFCFormatTz1Strategy -- DateParser
-    RFCFormatTz2Strategy -- DateParser
-    
-    BaseFeedParser <|-- AtomParser : Inherits
-    BaseFeedParser <|-- RSS1Parser : Inherits
-    BaseFeedParser <|-- RSS2Parser : Inherits
-    
-    FeedItem -- BaseFeedParser
-    
-    AtomParser -- FeedParser
-    RSS1Parser -- FeedParser
-    RSS2Parser -- FeedParser
-    
+
+    DateParseStrategy <|-- ISOFormatStrategy : inherits
+    DateParseStrategy <|-- ISOFormatTzStrategy : inherits
+    DateParseStrategy <|-- RFCFormatStrategy : inherits
+    DateParseStrategy <|-- RFCFormatTz1Strategy : inherits
+    DateParseStrategy <|-- RFCFormatTz2Strategy : inherits
+
+    DateParser --o DateParseStrategy : aggregates
+
+    BaseFeedParser <|-- AtomParser : inherits
+    BaseFeedParser <|-- RSS1Parser : inherits
+    BaseFeedParser <|-- RSS2Parser : inherits
+    FeedItem *-- BaseFeedParser : composite
+    DateParser <-- BaseFeedParser
+
+    PageParser --> URLFetcher : associate
+
     %% #######
     %% TUI
     %% #######
-    
-    UIComponentFactoryInterface <|-- UIComponentFactory : Inherits
-    UIComponentFactoryInterface -- UIRenderer
-    
-    UIComponent <|-- TitleBar : Inherits
-    UIComponent <|-- EntryList : Inherits
-    UIComponent <|-- EntryDetails : Inherits
-    
-    TitleBar -- UIComponentFactory
-    EntryList -- UIComponentFactory
-    EntryDetails -- UIComponentFactory
-    
-    Command <|-- MoveDownCommand : Inherits
-    Command <|-- MoveUpCommand : Inherits
-    Command <|-- ShowDetailsCommand : Inherits
-    Command <|-- QuitCommand : Inherits
-    
-    MoveDownCommand -- UIController 
-    MoveUpCommand -- UIController
-    ShowDetailsCommand -- UIController
-    QuitCommand -- UIController 
-    
-    UIModel -- UI
-    UIRenderer -- UI
-    UIController -- UI
-    
+
+    UIComponentFactoryInterface <|-- UIComponentFactory : inherits
+    TitleBar      *-- UIComponentFactory : composite
+    EntryList     *-- UIComponentFactory : composite
+    EntryDetails  *-- UIComponentFactory : composite
+
+    UIComponent <|-- TitleBar : inherits
+    UIComponent <|-- EntryList : inherits
+    UIComponent <|-- EntryDetails : inherits
+
+    Command <|-- MoveDownCommand : inherits
+    Command <|-- MoveUpCommand : inherits
+    Command <|-- ScrollLeftCommand : inherits
+    Command <|-- ScrollRightCommand : inherits
+    Command <|-- ShowDetailsCommand : inherits
+    Command <|-- QuitCommand : inherits
+    Command <|-- ScrollDownCommand : inherits
+    Command <|-- ScrollUpCommand : inherits
+    Command <|-- QuitDetailsCommand : inherits
+    MoveDownCommand <-- UIController : associate
+    MoveUpCommand <-- UIController : associate
+    ScrollLeftCommand <-- UIController : associate
+    ScrollRightCommand <-- UIController : associate
+    ShowDetailsCommand <-- UIController : associate
+    QuitCommand <-- UIController : associate
+    ScrollDownCommand <-- UIController : associate
+    ScrollUpCommand <-- UIController : associate
+    QuitDetailsCommand <-- UIController : associate
+    UIModel <-- UI : dependency
+    UIRenderer <-- UI : dependency
+    UIController <-- UI : dependency
+
     %% #######
     %% APP
     %% #######
-    
-    PageParser -- FeedManager
-    FeedParser -- FeedManager
-    DateParser -- FeedManager
-    URLFetcher -- FeedManager
-    
-    FeedManager -- FeedApp
+
+    URLFetcher *-- FeedFetcher : composite
+    FeedParser *-- FeedProcessor : composite
+    FeedFetcher *-- FeedManager : composite
+    FeedParser *-- FeedManager : composite
+    FeedSorter *-- FeedManager : composite
+
+    FeedManager *-- FeedApp : composite
+    UI *-- FeedApp : composite
+```
