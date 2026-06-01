@@ -11,7 +11,6 @@ class FetchResult:
     content: Optional[bytes] = None
     status_code: Optional[int] = None
     error: Optional[str] = None
-    cached: bool = False
     from_cache: bool = False
     age: Optional[float] = None
 
@@ -149,6 +148,3 @@ class URLFetcher:
     
     def clear_cache(self):
         self.cache.clear()
-    
-    def get_cache_stats(self) -> Dict:
-        return self.cache.get_stats()

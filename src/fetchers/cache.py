@@ -1,10 +1,9 @@
 import hashlib
 import json
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional, Dict, Any, List
-from enum import Enum
 
 @dataclass
 class CachedResponse:
@@ -47,58 +46,21 @@ class CachedResponse:
 @dataclass
 class CacheConfig:
     enabled: bool = True
-    strategy: str = "hybrid"
     ttl: timedelta = timedelta(minutes=15)
     max_memory_items: int = 100
     persistent: bool = True
-    cache_dir: Path = Path.home() / ".cache" / "rss-fetcher"
+    cache_dir: Path = Path.home() / ".cache" / "muxfeed"
     respect_headers: bool = True
     stale_while_revalidate: bool = True
-
-class CacheStats:
-    def __init__(self):
-        self.hits = 0
-        self.misses = 0
-        self.stale_hits = 0
-        self.stores = 0
-        self.evictions = 0
-        self.errors = 0
-    
-    @property
-    def total_requests(self) -> int:
-        return self.hits + self.misses
-    
-    @property
-    def hit_rate(self) -> float:
-        if self.total_requests == 0:
-            return 0.0
-        return (self.hits / self.total_requests) * 100
-    
-    def reset(self):
-        self.hits = self.misses = self.stale_hits = 0
-        self.stores = self.evictions = self.errors = 0
-    
-    def to_dict(self) -> Dict[str, Any]:
-        return {
-            'hits': self.hits,
-            'misses': self.misses,
-            'stale_hits': self.stale_hits,
-            'stores': self.stores,
-            'evictions': self.evictions,
-            'errors': self.errors,
-            'total_requests': self.total_requests,
-            'hit_rate': self.hit_rate
-        }
 
 class Cache:
     def __init__(self, config: CacheConfig):
         self.config = config
-        self.stats = CacheStats()
         self._memory_cache: Dict[str, CachedResponse] = {}
         self._ensure_cache_dir()
     
     def _ensure_cache_dir(self):
-        if self.config.persistent and self.config.cache_dir:
+        if self.config.persistent:
             self.config.cache_dir.mkdir(parents=True, exist_ok=True)
     
     def _get_cache_key(self, url: str) -> str:
@@ -115,7 +77,7 @@ class Cache:
             with open(path, 'w', encoding='utf-8') as f:
                 json.dump(response.to_dict(), f)
         except Exception:
-            self.stats.errors += 1
+            pass
     
     def _load_persistent(self, key: str) -> Optional[CachedResponse]:
         try:
@@ -134,7 +96,6 @@ class Cache:
             return response
     
         except Exception:
-            self.stats.errors += 1
             return None
     
     def _evict_if_needed(self):
@@ -149,7 +110,6 @@ class Cache:
         remove_count = max(1, len(sorted_items) // 5)
         for key, _ in sorted_items[:remove_count]:
             del self._memory_cache[key]
-            self.stats.evictions += 1
     
     def get(self, url: str, allow_stale: bool = False) -> Optional[CachedResponse]:
         key = self._get_cache_key(url)
@@ -162,19 +122,15 @@ class Cache:
                 self._memory_cache[key] = response
     
         if response is None:
-            self.stats.misses += 1
             return None
     
         if response.is_fresh(self.config.ttl):
-            self.stats.hits += 1
             return response
     
         if allow_stale and self.config.stale_while_revalidate:
-            self.stats.stale_hits += 1
             return response
     
         self.delete(url)
-        self.stats.misses += 1
         return None
     
     def set(self, url: str, response: CachedResponse):
@@ -185,8 +141,6 @@ class Cache:
         
         if self.config.persistent:
             self._save_persistent(key, response)
-        
-        self.stats.stores += 1
     
     def delete(self, url: str):
         key = self._get_cache_key(url)
@@ -205,23 +159,9 @@ class Cache:
     def clear(self):
         self._memory_cache.clear()
         
-        if self.config.persistent and self.config.cache_dir:
+        if self.config.persistent:
             for path in self.config.cache_dir.glob("*.cache"):
                 try:
                     path.unlink()
                 except Exception:
                     pass
-        
-        self.stats.reset()
-    
-    def get_all_keys(self) -> List[str]:
-        keys = set(self._memory_cache.keys())
-        
-        if self.config.persistent and self.config.cache_dir:
-            for path in self.config.cache_dir.glob("*.cache"):
-                keys.add(path.stem)
-        
-        return list(keys)
-    
-    def get_stats(self) -> Dict[str, Any]:
-        return self.stats.to_dict()
