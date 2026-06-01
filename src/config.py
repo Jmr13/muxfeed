@@ -45,8 +45,3 @@ TZ_OFFSETS = {
     "AEST": 10,
     "AEDT": 11
 }
-
-class CacheStrategy(Enum):
-    MEMORY_ONLY = "memory_only"
-    PERSISTENT = "persistent"
-    HYBRID = "hybrid"

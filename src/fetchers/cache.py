@@ -1,11 +1,10 @@
 import hashlib
-import pickle
+import json
 from dataclasses import dataclass, asdict
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional, Dict, Any, List
 from enum import Enum
-from src.config import CacheStrategy
 
 @dataclass
 class CachedResponse:
@@ -48,17 +47,13 @@ class CachedResponse:
 @dataclass
 class CacheConfig:
     enabled: bool = True
-    strategy: CacheStrategy = CacheStrategy.HYBRID
+    strategy: str = "hybrid"
     ttl: timedelta = timedelta(minutes=15)
     max_memory_items: int = 100
     persistent: bool = True
-    cache_dir: Optional[Path] = None
+    cache_dir: Path = Path.home() / ".cache" / "rss-fetcher"
     respect_headers: bool = True
     stale_while_revalidate: bool = True
-    
-    def __post_init__(self):
-        if self.persistent and not self.cache_dir:
-            self.cache_dir = Path.home() / '.cache' / 'rss-fetcher'
 
 class CacheStats:
     def __init__(self):
@@ -115,28 +110,29 @@ class Cache:
         return self.config.cache_dir / f"{key}.cache"
     
     def _save_persistent(self, key: str, response: CachedResponse):
-        if not self.config.persistent:
-            return
-        
         try:
             path = self._get_persistent_path(key)
-            with open(path, 'wb') as f:
-                pickle.dump(response.to_dict(), f)
+            with open(path, 'w', encoding='utf-8') as f:
+                json.dump(response.to_dict(), f)
         except Exception:
             self.stats.errors += 1
     
     def _load_persistent(self, key: str) -> Optional[CachedResponse]:
-        if not self.config.persistent:
-            return None
-        
         try:
             path = self._get_persistent_path(key)
             if not path.exists():
                 return None
-            
-            with open(path, 'rb') as f:
-                data = pickle.load(f)
-                return CachedResponse.from_dict(data)
+    
+            with open(path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                response = CachedResponse.from_dict(data)
+    
+            if not response.is_fresh(self.config.ttl):
+                path.unlink(missing_ok=True)
+                return None
+    
+            return response
+    
         except Exception:
             self.stats.errors += 1
             return None
