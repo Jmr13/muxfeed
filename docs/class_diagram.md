@@ -47,22 +47,9 @@ classDiagram
         CacheConfig: respect_headers bool = True
         CacheConfig: stale_while_revalidate bool = True
         CacheConfig: __post_init__
-    class CacheStats
-        CacheStats: hits = 0
-        CacheStats: misses = 0
-        CacheStats: stale_hits = 0
-        CacheStats: stores = 0
-        CacheStats: evictions = 0
-        CacheStats: errors = 0
-        CacheStats: total_requests() -> int
-        CacheStats: hit_rate() -> float
-        CacheStats: reset()
-        CacheStats: to_dict(self) -> Dict[str, Any]
     class Cache
         Cache: - config CacheConfig
-        Cache: - stats CacheStats
         Cache: - _memory_cache Dict[str, CachedResponse]
-        Cache: + __init__(config CacheConfig)
         Cache: - _ensure_cache_dir()
         Cache: - _get_cache_key(url str) str
         Cache: - _get_persistent_path(key str) Path
@@ -73,8 +60,6 @@ classDiagram
         Cache: + set(url str, response CachedResponse)
         Cache: + delete(url str)
         Cache: + clear()
-        Cache: + get_all_keys() List[str]
-        Cache: + get_stats() Dict[str, Any]
     class FetchResult
         <<interface>> FetchResult
             FetchResult: bool ok
@@ -99,7 +84,6 @@ classDiagram
         URLFetcher: fetch(url str, force_refresh bool = False) -> FetchResult
         URLFetcher: fetch_batch(urls list, force_refresh bool = False) -> Dict[str, FetchResult]
         URLFetcher: clear_cache()
-        URLFetcher: get_cache_stats() -> Dict
         
     %% src/parsers
     class DateParseStrategy
@@ -226,7 +210,6 @@ classDiagram
     CachedResponse <.. Cache : inherits
     FetchResult <.. URLFetcher : inherits
     CacheConfig *-- Cache : composite
-    CacheStats  *-- Cache : composite
     Cache       *-- URLFetcher : composite
 
     %% #######
