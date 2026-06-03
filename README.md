@@ -6,9 +6,9 @@ This project fetches web feeds, parses articles, caches responses, and provides 
 
 ## Why I Built This
 
-Many applications no longer fully support older Android versions (6.0 and below). While some of these apps are still available on the Google Play Store, I often encountered cases where they could be installed but failed to function properly. This was especially noticeable with android web feed readers.
-
-I built muxfeed as a lightweight alternative that is independent of mobile platform limitations and focuses on a simple, terminal-native experience. The project also serves as an opportunity to practice software design principles, while creating a tool that I can use regularly in my old phone.
+- Many applications no longer fully support older Android versions (6.0 and below). While some of these apps are still available on the Google Play Store, I often encountered cases where they could be installed but failed to function properly. This was especially noticeable with android web feed readers. I built muxfeed as a lightweight alternative that is partially independent of mobile platform limitations and focuses on a simple, terminal-native experience. 
+- There are growing concerns about how companies collect and use data to train their AI models. As AI adoption continues to expand, it has become increasingly difficult to use these tools without potentially compromising own's data. Therefore, maintaining sovereignty over our data has become a top priority.
+- The project also serves as an opportunity to practice software design principles while creating a tool that I can use regularly in my old phone.
 
 ## Features
 
@@ -17,6 +17,11 @@ I built muxfeed as a lightweight alternative that is independent of mobile platf
 - HTTP caching with persistent storage
 - Retry handling and resilient fetching
 - CLI commands for managing RSS feeds
+
+## Documentation
+
+### Class Diagram
+![Class Diagram](./docs/class_diagram.drawio.svg)
 
 ## Installation
 
