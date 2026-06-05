@@ -45,9 +45,9 @@ class CachedResponse:
 
 @dataclass
 class CacheConfig:
-    enabled: bool = True
     ttl: timedelta = timedelta(minutes=15)
     max_memory_items: int = 100
+    max_disk_items: int = 1000
     persistent: bool = True
     cache_dir: Path = Path.home() / ".cache" / "muxfeed"
     respect_headers: bool = True
@@ -98,22 +98,35 @@ class Cache:
         except Exception:
             return None
     
-    def _evict_if_needed(self):
+    def _evict_memory_if_needed(self):
         if len(self._memory_cache) < self.config.max_memory_items:
             return
-        
+    
         sorted_items = sorted(
             self._memory_cache.items(),
             key=lambda item: item[1].cached_at
         )
-        
+    
         remove_count = max(1, len(sorted_items) // 5)
+    
         for key, _ in sorted_items[:remove_count]:
             del self._memory_cache[key]
+            
+    def _evict_disk_if_needed(self):
+        cache_files = list(self.config.cache_dir.glob("*.cache"))
     
-    def get(self, url: str, allow_stale: bool = False) -> Optional[CachedResponse]:
+        if len(cache_files) < self.config.max_disk_items:
+            return
+    
+        cache_files.sort(key=lambda p: p.stat().st_mtime)
+    
+        remove_count = max(1, len(cache_files) // 5)
+    
+        for path in cache_files[:remove_count]:
+            path.unlink(missing_ok=True)
+    
+    def get(self, url: str, allow_stale) -> Optional[CachedResponse]:
         key = self._get_cache_key(url)
-    
         response = self._memory_cache.get(key)
     
         if response is None and self.config.persistent:
@@ -136,7 +149,8 @@ class Cache:
     def set(self, url: str, response: CachedResponse):
         key = self._get_cache_key(url)
         
-        self._evict_if_needed()
+        self._evict_memory_if_needed()
+        # self._evict_disk_if_needed()
         self._memory_cache[key] = response
         
         if self.config.persistent:

@@ -79,12 +79,8 @@ class URLFetcher:
         
         return headers
     
-    def fetch(self, url: str, force_refresh: bool = False) -> FetchResult:
-        cached = None
-    
-        if not force_refresh and self.cache_config.enabled:
-            cached = self.cache.get(url, allow_stale=True)
-    
+    def fetch(self, url: str) -> FetchResult:
+        cached = self.cache.get(url, allow_stale=True)
         headers = self._prepare_headers(cached)
     
         try:
@@ -117,8 +113,7 @@ class URLFetcher:
                 last_modified=response.headers.get("Last-Modified")
             )
     
-            if self.cache_config.enabled:
-                self.cache.set(url, new_cached)
+            self.cache.set(url, new_cached)
     
             return FetchResult(
                 ok=True,
