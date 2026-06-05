@@ -1,4 +1,4 @@
-```mermaid
+
 classDiagram
     direction TB
     %% src/app
@@ -222,13 +222,16 @@ classDiagram
     DateParseStrategy <|-- RFCFormatTz1Strategy : inherits
     DateParseStrategy <|-- RFCFormatTz2Strategy : inherits
 
-    DateParser --o DateParseStrategy : aggregates
+    DateParseStrategy o-- DateParser : aggregates
 
     BaseFeedParser <|-- AtomParser : inherits
     BaseFeedParser <|-- RSS1Parser : inherits
     BaseFeedParser <|-- RSS2Parser : inherits
     FeedItem *-- BaseFeedParser : composite
     DateParser <-- BaseFeedParser
+    AtomParser <-- FeedParser : associate
+    RSS1Parser <-- FeedParser : associate
+    RSS2Parser <-- FeedParser : associate
 
     PageParser --> URLFetcher : associate
 
@@ -263,9 +266,12 @@ classDiagram
     ScrollDownCommand <-- UIController : associate
     ScrollUpCommand <-- UIController : associate
     QuitDetailsCommand <-- UIController : associate
+    
+    UIComponentFactory <-- UIRenderer : dependency
+    
     UIModel <-- UI : dependency
-    UIRenderer <-- UI : dependency
     UIController <-- UI : dependency
+    UIRenderer <-- UI : dependency
 
     %% #######
     %% APP
@@ -274,9 +280,8 @@ classDiagram
     URLFetcher *-- FeedFetcher : composite
     FeedParser *-- FeedProcessor : composite
     FeedFetcher *-- FeedManager : composite
-    FeedParser *-- FeedManager : composite
+    FeedProcessor *-- FeedManager : composite
     FeedSorter *-- FeedManager : composite
 
     FeedManager *-- FeedApp : composite
     UI *-- FeedApp : composite
-```
