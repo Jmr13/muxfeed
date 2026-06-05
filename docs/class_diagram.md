@@ -1,4 +1,4 @@
-
+```mermaid
 classDiagram
     direction TB
     %% src/app
@@ -285,3 +285,4 @@ classDiagram
 
     FeedManager *-- FeedApp : composite
     UI *-- FeedApp : composite
+```

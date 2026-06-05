@@ -1,3 +1,4 @@
+```mermaid
 sequenceDiagram
     autonumber
     participant U as User
@@ -51,3 +52,4 @@ sequenceDiagram
     else HTTP error / exception
         F-->>U: FetchResult(ok=false, error)
     end
+```

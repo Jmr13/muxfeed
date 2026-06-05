@@ -21,7 +21,7 @@ This project fetches web feeds, parses articles, caches responses, and provides 
 ## Documentation
 
 ### Class Diagram
-![Class Diagram](./docs/class_diagram.drawio.svg)
+![Class Diagram](./docs/class_diagram.drawio.png)
 
 ## Installation
 

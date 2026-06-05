@@ -1,41 +1,9 @@
+```mermaid
 classDiagram
 
-%% =======================
-%% CLI MODULES
-%% =======================
-
-class AddRSSCLI {
-    +main()
-    +is_valid_url(url: str) bool
-}
-
-class ListRSSCLI {
-    +main()
-}
-
-class RemoveRSSCLI {
-    +main()
-}
-
-AddRSSCLI --> Config
-ListRSSCLI --> Config
-RemoveRSSCLI --> Config
-
-%% =======================
-%% CONFIG
-%% =======================
-
-class Config {
-    +load_feed_urls() List[str]
-    +save_feed_urls(urls: List[str]) void
-    +FEED_URLS: List[str]
-    +NS: Dict
-    +TZ_OFFSETS: Dict
-}
-
-%% =======================
-%% APP CORE
-%% =======================
+%% =========================
+%% Application Layer
+%% =========================
 
 class FeedApp {
     -feed_service: FeedManager
@@ -44,83 +12,128 @@ class FeedApp {
     +run()
 }
 
-FeedApp --> FeedManager
-FeedApp --> URLFetcher
-FeedApp --> PageParser
-FeedApp --> UI
-FeedApp --> UIComponentFactory
-
 class FeedManager {
-    -urls: List[str]
+    -urls: List~str~
     -fetcher: FeedFetcher
-    -parser: FeedParser
+    -parser: FeedProcessor
     -sorter: FeedSorter
-    +get_entries() List[FeedItem]
+    +get_entries()
 }
-
-FeedManager --> FeedFetcher
-FeedManager --> FeedParser
-FeedManager --> FeedSorter
-FeedManager --> FeedItem
 
 class FeedFetcher {
     -fetcher: URLFetcher
-    +fetch(url: str) bytes
+    +fetch(url)
 }
 
-FeedFetcher --> URLFetcher
-
 class FeedProcessor {
-    -parser_class: FeedParser
-    +parse(xml_bytes: bytes) List[FeedItem]
+    -parser_class
+    +parse(xml_bytes)
+}
+
+class FeedSorter {
+    +sort(items)
+}
+
+FeedApp --> FeedManager
+FeedApp --> UIComponentFactory
+FeedApp --> PageParser
+
+FeedManager --> FeedFetcher
+FeedManager --> FeedProcessor
+FeedManager --> FeedSorter
+
+
+%% =========================
+%% Feed Parsing
+%% =========================
+
+class FeedParser {
+    -root
+    -parsers
+    +parse()
+}
+
+class FeedItem {
+    +source: str
+    +title: str
+    +date: str
+    +link: str
+    +to_dict()
+}
+
+class BaseFeedParser {
+    <<abstract>>
+    -root
+    -date_parser: DateParser
+    +parse()*
+    +_get_text()
+}
+
+class AtomParser {
+    +parse()
+}
+
+class RSS1Parser {
+    +parse()
+}
+
+class RSS2Parser {
+    +parse()
 }
 
 FeedProcessor --> FeedParser
+FeedParser --> AtomParser
+FeedParser --> RSS1Parser
+FeedParser --> RSS2Parser
 
-class FeedSorter {
-    +sort(items) List
+BaseFeedParser <|-- AtomParser
+BaseFeedParser <|-- RSS1Parser
+BaseFeedParser <|-- RSS2Parser
+
+AtomParser --> FeedItem
+RSS1Parser --> FeedItem
+RSS2Parser --> FeedItem
+
+
+%% =========================
+%% Date Parsing Strategy
+%% =========================
+
+class DateParser {
+    -strategies
+    +parse(date_str)
 }
 
-FeedSorter --> FeedItem
+class DateParseStrategy {
+    <<abstract>>
+    +parse(date_str)*
+}
 
-%% =======================
-%% FETCHING + CACHE
-%% =======================
+class ISOFormatStrategy
+class ISOFormatTzStrategy
+class RFCFormatStrategy
+class RFCFormatTz1Strategy
+class RFCFormatTz2Strategy
+
+DateParseStrategy <|-- ISOFormatStrategy
+DateParseStrategy <|-- ISOFormatTzStrategy
+DateParseStrategy <|-- RFCFormatStrategy
+DateParseStrategy <|-- RFCFormatTz1Strategy
+DateParseStrategy <|-- RFCFormatTz2Strategy
+
+DateParser o-- DateParseStrategy
+BaseFeedParser --> DateParser
+
+
+%% =========================
+%% Fetching & Cache
+%% =========================
 
 class URLFetcher {
-    -session: Session
     -cache: Cache
-    +fetch(url: str) FetchResult
-    +fetch_batch(urls: list) Dict
-}
-
-URLFetcher --> Cache
-URLFetcher --> CachedResponse
-URLFetcher --> FetchResult
-
-class Cache {
-    -_memory_cache: Dict
-    +get(url: str) CachedResponse
-    +set(url: str, response: CachedResponse)
-    +delete(url: str)
-    +clear()
-}
-
-Cache --> CachedResponse
-Cache --> CacheConfig
-
-class CacheConfig {
-    +enabled: bool
-    +ttl: timedelta
-    +persistent: bool
-}
-
-class CachedResponse {
-    +content: bytes
-    +status_code: int
-    +headers: Dict
-    +cached_at: datetime
-    +is_fresh(ttl) bool
+    +fetch(url)
+    +fetch_batch(urls)
+    +clear_cache()
 }
 
 class FetchResult {
@@ -130,53 +143,50 @@ class FetchResult {
     +error: str
 }
 
-%% =======================
-%% PARSERS
-%% =======================
-
-class FeedParser {
-    -root: Element
-    +parse() List[FeedItem]
+class Cache {
+    -config: CacheConfig
+    +get(url)
+    +set(url,response)
+    +delete(url)
+    +clear()
 }
 
-FeedParser --> AtomParser
-FeedParser --> RSS1Parser
-FeedParser --> RSS2Parser
-FeedParser --> FeedItem
-
-class BaseFeedParser {
-    <<abstract>>
-    -root: Element
-    +parse() List[FeedItem]
+class CacheConfig {
+    +enabled: bool
+    +ttl
 }
 
-BaseFeedParser <|-- AtomParser
-BaseFeedParser <|-- RSS1Parser
-BaseFeedParser <|-- RSS2Parser
-
-class DateParser {
-    +parse(date_str: str) str
+class CachedResponse {
+    +content: bytes
+    +status_code: int
+    +age
+    +is_fresh()
 }
 
-BaseFeedParser --> DateParser
+URLFetcher --> Cache
+URLFetcher --> FetchResult
 
-class FeedItem {
-    +source: str
-    +title: str
-    +date: datetime
-    +link: str
-}
+Cache --> CacheConfig
+Cache --> CachedResponse
+
+FeedFetcher --> URLFetcher
+
+
+%% =========================
+%% Page Parsing
+%% =========================
 
 class PageParser {
     -fetcher: URLFetcher
-    +get_content(url: str) str
+    +get_content(url)
 }
 
 PageParser --> URLFetcher
 
-%% =======================
-%% TUI LAYER
-%% =======================
+
+%% =========================
+%% UI Layer
+%% =========================
 
 class UI {
     -model: UIModel
@@ -185,15 +195,11 @@ class UI {
     +launch()
 }
 
-UI --> UIModel
-UI --> UIRenderer
-UI --> UIController
-
 class UIModel {
-    -entries: List
-    -selected: int
-    +move_up()
     +move_down()
+    +move_up()
+    +scroll_title_left()
+    +scroll_title_right()
     +get_selected_entry()
 }
 
@@ -204,64 +210,67 @@ class UIRenderer {
     +draw_details()
 }
 
-UIRenderer --> UIComponentFactory
-UIRenderer --> PageParser
-UIRenderer --> EntryDetails
-
 class UIController {
     -model: UIModel
     -renderer: UIRenderer
     +run()
 }
 
+UI --> UIModel
+UI --> UIRenderer
+UI --> UIController
+
+UIRenderer --> UIComponentFactory
+UIRenderer --> PageParser
+
 UIController --> UIModel
 UIController --> UIRenderer
 
-class UIComponentFactory {
-    +create_component(type, kwargs) UIComponent
-}
 
-UIComponentFactory --> UIComponent
+%% =========================
+%% UI Components
+%% =========================
 
 class UIComponent {
     <<abstract>>
     +draw()
 }
 
+class TitleBar
+class EntryList
+class EntryDetails
+
 UIComponent <|-- TitleBar
 UIComponent <|-- EntryList
-UIComponent <|-- EntryDetails
 
-class TitleBar {
-    +text: str
-}
-
-class EntryList {
-    +entries: List
-    +selected: int
-    +draw()
-}
-
-class EntryDetails {
-    +entry
-    +page_parser: PageParser
-    +draw()
-}
+UIComponentFactory --> TitleBar
+UIComponentFactory --> EntryList
+UIComponentFactory --> EntryDetails
 
 EntryDetails --> PageParser
-EntryDetails --> FeedItem
 
-%% =======================
-%% COMMAND PATTERN
-%% =======================
+
+%% =========================
+%% Command Pattern
+%% =========================
 
 class Command {
     <<abstract>>
-    +execute(controller, stdscr)
+    +execute()*
 }
 
-Command <|-- MoveUpCommand
+class MoveDownCommand
+class MoveUpCommand
+class ScrollLeftCommand
+class ScrollRightCommand
+class ShowDetailsCommand
+class QuitCommand
+class ScrollDownCommand
+class ScrollUpCommand
+class QuitDetailsCommand
+
 Command <|-- MoveDownCommand
+Command <|-- MoveUpCommand
 Command <|-- ScrollLeftCommand
 Command <|-- ScrollRightCommand
 Command <|-- ShowDetailsCommand
@@ -271,3 +280,4 @@ Command <|-- ScrollUpCommand
 Command <|-- QuitDetailsCommand
 
 UIController --> Command
+```
