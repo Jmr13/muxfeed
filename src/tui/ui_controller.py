@@ -9,7 +9,7 @@ class UIController:
     def __init__(self, model, renderer):
         self.model = model
         self.renderer = renderer
-        self.title_text = "News Feed (↑/↓/j/k to scroll, ←/→ to scroll title, Enter to view, q to quit)"
+        self.title_text = "News Feed (↑/k ↓/j to scroll, ←/h →/l to scroll title, Enter to view, q to quit)"
         self.running = True
         self.view_mode = "list"
         self._init_commands()

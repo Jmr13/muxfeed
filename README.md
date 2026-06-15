@@ -114,3 +114,8 @@ compiled_python_2.md
 - Disk size limit (auto cleanup in cache)
 - Cache compression (gzip)
 - cache corruption recovery (atomic writes)
+
+## Supports
+- Android Termux ✅ 
+- Linux ✅ 
+- Windows ❌ (Not tested yet)
