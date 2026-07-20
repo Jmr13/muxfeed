@@ -2,10 +2,11 @@ import os
 
 SOURCE_DIR = "./"
 OUTPUT_FILE_PREFIX = "compiled_python"
-MAX_FILE_SIZE = 12 * 1024 * 1024
+# 1024 bytes = 1 KB, 1024 * 1024 bytes = 1 MB, 12 * 1024 * 1024 = 12 MB
+MAX_FILE_SIZE = 30 * 1024
 
-IGNORE_DIRS = {"__pycache__", ".git", ".venv", "venv", "node_modules", ".pytest_cache", "tests", "docs", "llm", "./",}
-IGNORE_FILES = {".DS_Store", "conftest.py", "compile.py"}
+IGNORE_DIRS = {"__pycache__", ".git", ".venv", "venv", "node_modules", ".pytest_cache", "tests", "docs", "llm", "./"}
+IGNORE_FILES = {".DS_Store", "conftest.py", "compile.py", "__init__.py", ""}
 
 def get_python_files(directory):
     py_files = []
