@@ -85,24 +85,40 @@ class RSS2Parser(BaseFeedParser):
 class FeedParser:
     def __init__(self, xml_bytes: Optional[bytes]):
         self.root = None
+        self.parser: Optional[BaseFeedParser] = None
+
         if not xml_bytes:
             return
+
         try:
             self.root = ET.fromstring(xml_bytes)
-        except ET.ParseError:
+            self.parser = self._get_feed_parser_strategy()
+        except (ET.ParseError, ValueError):
             self.root = None
+            self.parser = None
 
-        # TODO: Determine the type of FeedParser to be used
-        self.parsers = [
-            AtomParser(self.root),
-            RSS1Parser(self.root),
-            RSS2Parser(self.root),
-        ]
+    def _get_feed_parser_strategy(self) -> BaseFeedParser:
+        if self.root is None:
+            raise ValueError("XML root is None")
+
+        tag = self.root.tag.lower()
+
+        # Atom
+        if tag.endswith("feed"):
+            return AtomParser(self.root)
+
+        # RSS 2.0
+        if tag == "rss" or tag.endswith("rss"):
+            return RSS2Parser(self.root)
+
+        # RSS 1.0 (RDF)
+        if tag.endswith("rdf"):
+            return RSS1Parser(self.root)
+
+        raise ValueError(f"Unsupported feed format: {self.root.tag}")
 
     def parse(self) -> List[FeedItem]:
-        items = []
-        if self.root is None:
-            return items
-        for parser in self.parsers:
-            items.extend(parser.parse())
-        return items
+        if self.parser is None:
+            return []
+
+        return self.parser.parse()
