@@ -16,50 +16,38 @@ def test_feeditem_initialization():
     assert item.date == DATE
     assert item.link == LINK
 
-def test_feeditem_to_dict():
-    item = FeedItem(SOURCE, TITLE, DATE, LINK)
-    
-    expected_dict = {
-        "source": SOURCE,
-        "title": TITLE,
-        "date": DATE,
-        "link": LINK
-    }
-
-    assert item.to_dict() == expected_dict
-
 @pytest.mark.parametrize("feed_url", ATOM_XML_FEEDS)
 def test_parse_atom_feed(feed_url, url_fetcher):
     result = url_fetcher.fetch(feed_url)
     parser = FeedParser(result.content)
-    items = [item.to_dict() for item in parser.parse()]
+    items = parser.parse()
     
     for item in items:
-        assert item.get('source') is not None, "Missing source in feed item"
-        assert item.get('title') is not None, "Missing title in feed item"
-        assert item.get('date') is not None, "Missing date in feed item"
-        assert item.get('link') is not None, "Missing link in feed item"
+        assert item.source is not None
+        assert item.title is not None
+        assert item.date is not None
+        assert item.link is not None
 
 @pytest.mark.parametrize("feed_url", RSS1_XML_FEEDS)
 def test_parse_rss1_feed(feed_url, url_fetcher):
     result = url_fetcher.fetch(feed_url)
     parser = FeedParser(result.content)
-    items = [item.to_dict() for item in parser.parse()]
+    items = [item for item in parser.parse()]
     
     for item in items:
-        assert item.get('source') is not None
-        assert item.get('title') is not None
-        assert item.get('date') is not None
-        assert item.get('link') is not None
+        assert item.source is not None
+        assert item.title is not None
+        assert item.date is not None
+        assert item.link is not None
 
 @pytest.mark.parametrize("feed_url", RSS2_XML_FEEDS)
 def test_parse_rss2_feed(feed_url, url_fetcher):
     result = url_fetcher.fetch(feed_url)
     parser = FeedParser(result.content)
-    items = [item.to_dict() for item in parser.parse()]
+    items = [item for item in parser.parse()]
     
     for item in items:
-        assert item.get('source') is not None
-        assert item.get('title') is not None
-        assert item.get('date') is not None
-        assert item.get('link') is not None
+        assert item.source is not None
+        assert item.title is not None
+        assert item.date is not None
+        assert item.link is not None
