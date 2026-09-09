@@ -208,3 +208,6 @@ __marimo__/
 
 # RSS links
 src/feeds.json
+
+# qwen code
+.qwen/tmp
