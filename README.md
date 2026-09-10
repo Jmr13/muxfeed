@@ -37,7 +37,7 @@ The application is split into four layers:
 
 ### Diagrams
 
-- [Class diagram (Mermaid)](./docs/class_diagram.md) — renders on GitHub
+- [Architecture (Mermaid)](./docs/ARCHITECTURE.md) — layer overview, class diagram, and sequence diagrams — renders on GitHub
 
 ## Installation
 
