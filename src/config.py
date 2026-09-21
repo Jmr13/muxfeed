@@ -27,21 +27,3 @@ NS = {
     'dc': 'http://purl.org/dc/elements/1.1/'
 }
 
-TZ_OFFSETS = {
-    "PST": -8,
-    "PDT": -7,
-    "MST": -7,
-    "MDT": -6,
-    "CST": -6,
-    "CDT": -5,
-    "EST": -5,
-    "EDT": -4,
-    "GMT": 0,
-    "UTC": 0,
-    "CET": 1,
-    "CEST": 2,
-    "IST": 5.5,
-    "JST": 9,
-    "AEST": 10,
-    "AEDT": 11
-}
