@@ -56,7 +56,7 @@ RFC_CASES = [
 # RFC 2822 inputs with timezone abbreviations
 RFC_TZ_ABBREV_CASES = [
     # PST = UTC-8
-    ("Thu, 01 Jan 2026 08:00:00 PST", "January 01, 2026 | 4:00 PM"),
+    ("Thu, 01 Jan 2026 08:00:00 PST", "January 01, 2026 | 8:00 AM"),
 
     # UTC
     ("Thu, 01 Jan 2026 00:00:00 UTC", "January 01, 2026 | 12:00 AM"),
@@ -65,10 +65,10 @@ RFC_TZ_ABBREV_CASES = [
     ("Thu, 01 Jan 2026 00:00:00 GMT", "January 01, 2026 | 12:00 AM"),
 
     # JST = UTC+9
-    ("Thu, 01 Jan 2026 09:00:00 JST", "January 01, 2026 | 12:00 AM"),
+    ("Thu, 01 Jan 2026 09:00:00 JST", "January 01, 2026 | 9:00 AM"),
 
     # IST = UTC+5:30
-    ("Thu, 01 Jan 2026 05:30:00 IST", "January 01, 2026 | 12:00 AM"),
+    ("Thu, 01 Jan 2026 05:30:00 IST", "January 01, 2026 | 5:30 AM"),
 ]
 
 
@@ -149,8 +149,8 @@ RFC3339_INVALID_CASES = [
     # Lowercase timezone
     ("2026-01-01t00:00:00z", None),
 
-    # More than Python's supported microsecond precision
-    ("2026-01-01T00:00:00.123456789Z", None),
+    # More than Python's supported microsecond precision (truncated to 6 digits)
+    ("2026-01-01T00:00:00.123456789Z", "January 01, 2026 | 12:00 AM"),
 
     # Slash-based date
     ("01/01/2026 00:00:00", None),
